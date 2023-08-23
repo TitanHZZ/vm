@@ -4,5 +4,4 @@
     dup 1
     dup 1
     add
-    apt
     jmp 2

@@ -4,7 +4,6 @@
 #include <fstream>
 #include <string>
 
-#include "vm.h"
 #include "inst.h"
 
 struct Program {
