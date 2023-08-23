@@ -1,5 +1,0 @@
-/home/titanhzz/dev/c++/vm/build/CMakeFiles/vm.dir
-/home/titanhzz/dev/c++/vm/build/CMakeFiles/package.dir
-/home/titanhzz/dev/c++/vm/build/CMakeFiles/package_source.dir
-/home/titanhzz/dev/c++/vm/build/CMakeFiles/edit_cache.dir
-/home/titanhzz/dev/c++/vm/build/CMakeFiles/rebuild_cache.dir
