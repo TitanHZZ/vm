@@ -1,0 +1,20 @@
+[
+{
+  "directory": "/home/titanhzz/dev/c++/vm/build",
+  "command": "/usr/bin/g++ -O3 -DNDEBUG -std=gnu++23 -Wall -Wextra -Wswitch-enum -o CMakeFiles/vm.dir/exceptions.cpp.o -c /home/titanhzz/dev/c++/vm/exceptions.cpp",
+  "file": "/home/titanhzz/dev/c++/vm/exceptions.cpp",
+  "output": "CMakeFiles/vm.dir/exceptions.cpp.o"
+},
+{
+  "directory": "/home/titanhzz/dev/c++/vm/build",
+  "command": "/usr/bin/g++ -O3 -DNDEBUG -std=gnu++23 -Wall -Wextra -Wswitch-enum -o CMakeFiles/vm.dir/main.cpp.o -c /home/titanhzz/dev/c++/vm/main.cpp",
+  "file": "/home/titanhzz/dev/c++/vm/main.cpp",
+  "output": "CMakeFiles/vm.dir/main.cpp.o"
+},
+{
+  "directory": "/home/titanhzz/dev/c++/vm/build",
+  "command": "/usr/bin/g++ -O3 -DNDEBUG -std=gnu++23 -Wall -Wextra -Wswitch-enum -o CMakeFiles/vm.dir/vm.cpp.o -c /home/titanhzz/dev/c++/vm/vm.cpp",
+  "file": "/home/titanhzz/dev/c++/vm/vm.cpp",
+  "output": "CMakeFiles/vm.dir/vm.cpp.o"
+}
+]
