@@ -16,7 +16,7 @@ $ ./build/vme -i fib.vm
 ### vasm
 
 Assembly language for the virtual machine.  
-For example look in the [examples](https://github.com/TitanHZZ/vm/tree/main/examples) folder.
+For examples look in the [examples](https://github.com/TitanHZZ/vm/tree/main/examples) folder.
 
 ### vm
 
