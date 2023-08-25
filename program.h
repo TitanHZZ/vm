@@ -3,8 +3,14 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <unordered_map>
 
 #include "inst.h"
+
+typedef struct {
+    Word points_to;
+    Word line_number;
+} Label;
 
 struct Program {
     std::vector<Inst> insts;
@@ -63,35 +69,100 @@ struct Program {
         while (str.size() > 0 && str.at(str.size() - 1) == ' ') str.pop_back(); // trim right
     }
 
-    void string_ignore_comment_in_line(std::string& str) {
-        // no comment in the line
-        if(!str.contains('#'))
+    void string_split_by_delimeter(std::string& line, const char ch, const bool get_first_substring) {
+        if (line.size() < 1)
             return;
 
-        // return index of 'ch'
-        const int comment_index = str.find_first_of('#');
-        str = str.substr(0, comment_index);
+        // check for the 'ch' in the line
+        const size_t delimeter_index = line.find_first_of(ch);
+        if (delimeter_index == std::string::npos)
+            return;
+
+        // split line by delimeter
+        if (get_first_substring) {
+            line = line.substr(0, delimeter_index);
+        } else {
+            line = line.substr(delimeter_index + 1, line.size() - delimeter_index - 1);
+        }
+    }
+
+    void get_label_definitions(std::ifstream& file, std::unordered_map<std::string, Label>& labels) {
+        size_t line_count = 0;
+        size_t inst_count = 0;
+        std::string line;
+
+        while (std::getline(file, line)) {
+            line_count++;
+
+            // ignore comments in same line as instruction and ignore comment lines
+            string_split_by_delimeter(line, '#', true);
+            string_trim(line);
+
+            // ignore empty lines
+            if (line.size() < 1)
+                continue;
+
+            // if line has a ':' then it has a label
+            if (line.find_first_of(':') != std::string::npos) {
+                // get label and check for spaces (spaces are not allowed in labels)
+                string_split_by_delimeter(line, ':', true);
+                if (line.find_first_of(' ') != std::string::npos) {
+                    std::cerr << "ERROR: Label with spaces defined at " << line_count << "." << std::endl;
+                    exit(1);
+                }
+
+                string_trim(line);
+                if (line.size() < 1) {
+                    std::cerr << "ERROR: Empty label defined at line " << line_count << "." << std::endl;
+                    exit(1);
+                }
+
+                // if we find a label that is already in the 'labels' map, we got a duplicate label
+                if (labels.contains(line)) {
+                    std::cerr << "ERROR: Duplicate label definition:" << std::endl;
+                    std::cerr << "    Label '" << line << "' defined at line " << labels.at(line).line_number << ", was redefined at line " << line_count << "." << std::endl;
+                    exit(1);
+                }
+
+                labels.emplace(std::move(line), Label {.points_to = inst_count, .line_number = line_count});
+            } else {
+                // if there is no label or comment and it is not en empty line, we have an instruction
+                inst_count++;
+            }
+        }
+
+        // make file ptr point back top the beginning
+        file.clear();
+        file.seekg(0, std::ios::beg);
     }
 
     void parse_from_file(const char *path) {
         std::ifstream file(path, std::ios::in);
         if (!file.is_open()) {
-            std::cerr << "ERROR: An error occured when trying to read a program asm from '" << path << "'" << std::endl;
+            std::cerr << "ERROR: An error occured when trying to read a program asm from '" << path << "'." << std::endl;
             exit(1);
         }
 
-        size_t line_count = 1;
+        // hash table to keep track of all labels in the source code
+        std::unordered_map<std::string, Label> labels;
+
+        // get all the labels and the addrs they point to
+        get_label_definitions(file, labels);
+
+        size_t line_count = 0;
         std::string line;
         while (std::getline(file, line)) {
+            line_count++;
+
+            // ignore comments in same line as instruction and ignore comment lines
+            string_split_by_delimeter(line, '#', true);
+            // ignore label in same line
+            string_split_by_delimeter(line, ':', false);
             string_trim(line);
 
-            // ignore empty lines and comment lines
-            if (line.size() < 1 || line.starts_with('#'))
+            // ignore empty lines
+            if (line.size() < 1)
                 continue;
-
-            // ignore comments in same line as instruction
-            string_ignore_comment_in_line(line);
-            string_trim(line);
 
             std::string operand = "";
             std::string instruction = "";
@@ -103,6 +174,7 @@ struct Program {
                 // parse the argument and instructions passed in
                 instruction = line.substr(0, space_index);
                 operand = line.substr(space_index, line.size() - space_index); // operand does not need trimming
+                string_trim(operand); // needs to be trimmed because of the label implementation system
             }
 
             // loop over all the instructions
@@ -118,8 +190,19 @@ struct Program {
                 if (inst_requires_operand((Inst_Type)inst_to_check) == true) {
                     if (operand != "") {
                         // fill in the new instruction
-                        new_inst.type = (Inst_Type)inst_to_check;
-                        new_inst.operand = std::stoul(operand);
+                        new_inst.type = (Inst_Type) inst_to_check;
+
+                        // operand points to a label already defined
+                        if (labels.contains(operand)) {
+                            new_inst.operand = labels.at(operand).points_to;
+                        } else {
+                            try {
+                                new_inst.operand = std::stoul(operand);
+                            } catch(const std::exception& e) {
+                                std::cerr << "ERROR: Undefined label '" << operand << "' at line " << line_count << "." << std::endl;
+                                exit(1);
+                            }
+                        }
                     } else {
                         std::cerr << "ERROR: An error occured when parsing asm file:" << std::endl;
                         std::cerr << "    Instruction '" << inst_type_as_cstr((Inst_Type)inst_to_check) << "' on line " << line_count << " requires an operand." << std::endl;
@@ -141,9 +224,8 @@ struct Program {
                 break;
             }
 
-            line_count++;
             if (parsed_inst == false) {
-                std::cerr << "ERROR: Unknown instruction '" << instruction <<  "' on line" << line_count <<"." << std::endl;
+                std::cerr << "ERROR: Unknown instruction '" << instruction <<  "' on line " << line_count <<"." << std::endl;
                 exit(1);
             }
         }

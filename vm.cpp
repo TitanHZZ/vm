@@ -102,9 +102,6 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         break;
 
     case Inst_Type::INST_JMP:
-        if (sp < 1)
-                return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
-
         // no need to check for negative addrs because Word is unsigned
         if (inst.operand >= current_program_size)
             return Exception_Type::EXCEPTION_INVALID_JMP_ADDR;
@@ -128,9 +125,6 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         break;
 
     case Inst_Type::INST_JMP_IF:
-        if (sp < 1)
-            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
-
         if (stack[sp-1] == 1) {
             ip = inst.operand;
             return Exception_Type::EXCEPTION_OK;
