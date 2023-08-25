@@ -199,7 +199,7 @@ struct Program {
                             try {
                                 new_inst.operand = std::stoul(operand);
                             } catch(const std::exception& e) {
-                                std::cerr << "ERROR: Undefined label '" << operand << "' at line " << line_count << "." << std::endl;
+                                std::cerr << "ERROR: Invalid address or undefined label '" << operand << "' at line " << line_count << "." << std::endl;
                                 exit(1);
                             }
                         }
