@@ -64,3 +64,7 @@ static const char *inst_type_as_cstr(const Inst_Type& inst) {
 static inline bool inst_requires_operand(const Inst_Type& inst) {
     return inst == INST_PUSH || inst == INST_JMP || inst == INST_JMP_IF || inst == INST_DUP;
 }
+
+static inline bool inst_operand_might_be_label(const Inst_Type& inst) {
+    return inst == INST_JMP || inst == INST_JMP_IF;
+}

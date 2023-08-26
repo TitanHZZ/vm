@@ -265,6 +265,41 @@ struct Program {
 
         return ifs;
     }
+
+    void print_program(bool with_labels = false) {
+        size_t label_suffix = 0;
+        std::unordered_map<size_t, std::string> jmp_addr_label_names;
+
+        // get places for labels if requested
+        if (with_labels) {
+            for (Inst& inst: insts) {
+                if (inst_operand_might_be_label(inst.type) && jmp_addr_label_names.contains(inst.operand) == false) {
+                    jmp_addr_label_names.emplace(inst.operand, "label_" + std::to_string(label_suffix));
+                    label_suffix++;
+                }
+            }
+        }
+
+        size_t inst_count = 0;
+        for (Inst& inst: insts) {
+            // print labels
+            if (with_labels && jmp_addr_label_names.contains(inst_count))
+                std::cout << std::endl << jmp_addr_label_names.at(inst_count) << ":" << std::endl;
+
+            // print instruction and its operand
+            std::cout << "    " << inst_type_as_cstr(inst.type);
+            if (inst_requires_operand(inst.type)) {
+                if (with_labels && inst_operand_might_be_label(inst.type)) {
+                    std::cout << " " << jmp_addr_label_names.at(inst.operand);
+                } else {
+                    std::cout << " " << inst.operand;
+                }
+            }
+
+            std::cout << std::endl;
+            inst_count++;
+        }
+    }
 };
 
 typedef struct Program Program;

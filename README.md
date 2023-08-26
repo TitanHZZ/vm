@@ -14,18 +14,17 @@ $ ./build/vme -i fib.vm
 ## Components
 
 ### vasm
-
 Assembly language for the virtual machine.  
-For examples look in the [examples](https://github.com/TitanHZZ/vm/tree/main/examples) folder.
+For examples look in the [examples](./examples/) folder.
 
 ### vm
-
 Byte code (executable) file format, compiled with [vasma](#vasma).
 
 ### vasma
-
-'vasma' is the vasm assembler that generates byte code from a [source file](https://github.com/TitanHZZ/vm/tree/main/examples) to be ran by [vme](#vme).
+'vasma' is the vasm assembler that generates byte code from a [source file](./examples/) to be ran by [vme](#vme).
 
 ### vme
-
 The vasm executor, used to run [vm](#vm-1) files.
+
+## dvasm
+The vasm disassembler. Get source code back from an executable file.

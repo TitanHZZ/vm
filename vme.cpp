@@ -2,6 +2,7 @@
 #include <cstring>
 
 #include "vm.h"
+#include "program_args.h"
 
 /*// count up to 50
 const Inst program2[] = {
@@ -31,44 +32,29 @@ constexpr size_t program_size = sizeof(program) / sizeof(program[0]);*/
 // Program p(program, program_size);
 // Program p(std::move(program), program_size); // takes ownership of the program
 
-void next_arg(int *argc_p, char ***argv_p) {
-    (*argc_p)--;
-    (*argv_p)++;
-}
-
-void print_usage(const char *program_name) {
+void program_usage(const char* program_name) {
     std::cerr << "Usage: " << program_name << " [args]" << std::endl;
     std::cerr << "    args: -i: Input file name to run." << std::endl;
 }
 
-int main(int argc, char** argv) {
-    // save program name
-    const char *program_name = argv[0];
+int main(int argc, char* argv[]) {
+    const std::vector<std::string_view> args(argv, argv + argc);
 
-    // ignore program name in args
-    next_arg(&argc, &argv);
-
-    if (argc != 2) {
-        std::cerr << "ERROR: Expected 2 arguments but got " << argc << "." << std::endl;
-        print_usage(program_name);
+    if (!program_args::has_option(args, "-i")) {
+        std::cerr << "ERROR: Expected argument '-i'." << std::endl;
+        program_usage(args.at(0).data());
         exit(1);
     }
 
-    const char *arg1 = argv[0];
-
-    char *input_file_name = nullptr;
-    if (strcmp(arg1, "-i") == 0) {
-        input_file_name = argv[1];
-    }
-
-    if (input_file_name == nullptr) {
-        std::cerr << "ERROR: An unknown error occurred when parsing the arguments." << std::endl;
-        print_usage(program_name);
+    const std::string_view input_file_path = program_args::get_option(args, "-i");
+    if (input_file_path == "") {
+        std::cerr << "ERROR: Option '-i' requires a parameter." << std::endl;
+        program_usage(args.at(0).data());
         exit(1);
     }
 
     Program p;
-    p.read_from_file(input_file_name);
+    p.read_from_file(input_file_path.data());
 
     Vm vm;
     vm.execute_program(p);
