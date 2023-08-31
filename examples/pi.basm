@@ -1,0 +1,65 @@
+# program that aproximates the value of pi
+# https://en.wikipedia.org/wiki/Approximations_of_%CF%80
+
+# int den = 3;
+# double result_pi = 1; double sign = -1;
+# for (int i = 0; i < 100; i++) {
+#     result_pi += sign / den;
+#     den += 2;
+#     sign *= -1;
+# }
+# printf("%lf\n", 4 * result_pi);
+
+# order of the stack in the beginning of each loop iteration
+# index
+# den
+# result
+# sign
+
+    push 0  # index
+    push 3  # den
+    push 1  # result
+    push -1 # sign
+
+loop:
+    push 0
+    swap 4
+    dup 0
+    push 100 # number of iterations
+    equ
+    jif end
+    push 1
+    add
+    swap 4
+    pop
+
+    dup 0
+    dup 3
+    div
+    dup 2
+    add
+    swap 2
+    pop
+    push 2
+    dup 3
+    add
+    swap 3
+    pop
+    push -1
+    mul
+    jmp loop
+
+end:
+    # finish pi calculation and clezn up the stack
+    pop
+    pop
+    pop
+    push 4
+    mul
+    swap 1
+    pop
+    swap 1
+    pop
+
+    dump
+    exit

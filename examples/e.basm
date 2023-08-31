@@ -1,0 +1,64 @@
+# program that aproximates the value of e(Euler's number)
+# https://en.wikipedia.org/wiki/E_(mathematical_constant)
+# e = 1 + 1/1! + 1/2! + 1/3! + 1/4! + ...
+
+# C code:
+# double result = 1;
+# int prev = 1; int fact = 1;
+# for (int i = 0; i < 15; i++) {
+#     fact *= prev++;
+#     result += 1 / fact;
+# }
+# printf("%f\n", result);
+
+# order of the stack in the beginning of each loop iteration
+# index
+# result
+# fact
+# prev
+
+    push 0 # index
+    push 1 # result
+    push 1 # fact
+    push 1 # prev
+
+loop:
+    push 0
+    swap 4
+    dup 0
+    push 12 # number of iterations
+    equ
+    jif end
+    push 1
+    add
+    swap 4
+    pop
+
+    swap 1
+    dup 1
+    mul
+    swap 1
+    push 1
+    add
+    swap 1
+    push 1
+    dup 1
+    div
+    dup 3
+    add
+    swap 3
+    pop
+    swap 1
+    jmp loop
+
+end:
+    # clean the stack
+    pop
+    pop
+    pop
+    pop
+    swap 1
+    pop
+
+    dump
+    exit

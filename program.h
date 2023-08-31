@@ -3,13 +3,15 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <cstring>
+#include <algorithm>
 #include <unordered_map>
 
 #include "inst.h"
 
 typedef struct {
-    Word points_to;
-    Word line_number;
+    void *points_to;
+    uint64_t line_number;
 } Label;
 
 struct Program {
@@ -124,7 +126,7 @@ struct Program {
                     exit(1);
                 }
 
-                labels.emplace(std::move(line), Label {.points_to = inst_count, .line_number = line_count});
+                labels.emplace(std::move(line), Label {.points_to = (void*)inst_count, .line_number = line_count});
             } else {
                 // if there is no label or comment and it is not en empty line, we have an instruction
                 inst_count++;
@@ -192,17 +194,64 @@ struct Program {
                         // fill in the new instruction
                         new_inst.type = (Inst_Type) inst_to_check;
 
-                        // operand points to a label already defined
-                        if (labels.contains(operand)) {
-                            new_inst.operand = labels.at(operand).points_to;
+                        // we assume that any instruction that accepts a label, will have an operand of type 'void*'
+                        if (inst_operand_might_be_label((Inst_Type)inst_to_check)) {
+                            // check if operand is a label and it is defined
+                            // WARNING: this does not block the  user from using labels that are just numbers (maybe that should be changed in the future)
+                            if (labels.contains(operand)) {
+                                new_inst.operand = Nan_Box(labels.at(operand).points_to);
+                            } else if (std::all_of(operand.begin(), operand.end(), ::isdigit)) {
+                                // if the operand is not in the labels map, it needs to be a number(absolute address)
+                                // this check also makes sure we dont get any negative addresses
+                                new_inst.operand = Nan_Box((void*)std::stol(operand));
+                            } else {
+                                // operand is an invalid addr or label
+                                std::cerr << "ERROR: Invalid address or undefind label '" << operand << "' at line " << line_count << "." << std::endl;
+                                exit(1);
+                            }
+                        } else if (inst_accepts_fp_operand((Inst_Type)inst_to_check)) {
+                            char *end_ptr = nullptr;
+                            new_inst.operand = Nan_Box(std::strtol(operand.c_str(), &end_ptr, 10));
+                            if ((size_t)(end_ptr - operand.c_str()) != operand.size()) {
+                                // replace ',' with '.'
+                                const size_t comma_index = operand.find_first_of(',');
+                                if (comma_index != std::string::npos)
+                                    operand.replace(comma_index, 1, ".");
+
+                                // could not parse as int, try now as double
+                                new_inst.operand = Nan_Box(std::strtod(operand.c_str(), &end_ptr));
+                                if ((size_t)(end_ptr - operand.c_str()) != operand.size()) {
+                                    std::cerr << "ERROR: Invalid operand '" << operand << "' at line " << line_count << "." << std::endl;
+                                    exit(1);
+                                }
+                            }
                         } else {
+                            // TODO: replace with c functions to avoid exceptions
+                            // TODO: in some cases, we can detect if the operand should not be negative (at compile time)
+                            // implement that
                             try {
-                                new_inst.operand = std::stoul(operand);
+                                size_t char_processed_count = 0;
+                                new_inst.operand = Nan_Box(std::stol(operand, &char_processed_count));
+
+                                // operand was not entirely processed
+                                if (char_processed_count != operand.size()) {
+                                    std::cerr << "ERROR: Invalid operand '" << operand << "' at line " << line_count << "." << std::endl;
+                                    exit(1);
+                                }
                             } catch(const std::exception& e) {
-                                std::cerr << "ERROR: Invalid address or undefined label '" << operand << "' at line " << line_count << "." << std::endl;
+                                std::cerr << "ERROR: Invalid operand '" << operand << "' at line " << line_count << "." << std::endl;
                                 exit(1);
                             }
                         }
+                        /*// WARNING: this assumes that any instrcution that does not accept a label or a floating point number, also, does not accept negative numbers
+                        // maybe this should be changed in the future
+                        } else if (std::all_of(operand.begin(), operand.end(), ::isdigit)) {
+                            // convert operand to int
+                            new_inst.operand = Nan_Box(std::stol(operand));
+                        } else {
+                            std::cerr << "ERROR: Invalid operand '" << operand << "' at line " << line_count << "." << std::endl;
+                            exit(1);
+                        }*/
                     } else {
                         std::cerr << "ERROR: An error occured when parsing asm file:" << std::endl;
                         std::cerr << "    Instruction '" << inst_type_as_cstr((Inst_Type)inst_to_check) << "' on line " << line_count << " requires an operand." << std::endl;
@@ -268,13 +317,13 @@ struct Program {
 
     void print_program(bool with_labels = false) {
         size_t label_suffix = 0;
-        std::unordered_map<size_t, std::string> jmp_addr_label_names;
+        std::unordered_map<void*, std::string> jmp_addr_label_names;
 
         // get places for labels if requested
         if (with_labels) {
             for (Inst& inst: insts) {
-                if (inst_operand_might_be_label(inst.type) && jmp_addr_label_names.contains(inst.operand) == false) {
-                    jmp_addr_label_names.emplace(inst.operand, "label_" + std::to_string(label_suffix));
+                if (inst_operand_might_be_label(inst.type) && jmp_addr_label_names.contains(inst.operand.as_ptr()) == false) {
+                    jmp_addr_label_names.emplace(inst.operand.as_ptr(), "label_" + std::to_string(label_suffix));
                     label_suffix++;
                 }
             }
@@ -283,16 +332,34 @@ struct Program {
         size_t inst_count = 0;
         for (Inst& inst: insts) {
             // print labels
-            if (with_labels && jmp_addr_label_names.contains(inst_count))
-                std::cout << std::endl << jmp_addr_label_names.at(inst_count) << ":" << std::endl;
+            if (with_labels && jmp_addr_label_names.contains((void*)inst_count))
+                std::cout << std::endl << jmp_addr_label_names.at((void*)inst_count) << ":" << std::endl;
 
             // print instruction and its operand
             std::cout << "    " << inst_type_as_cstr(inst.type);
             if (inst_requires_operand(inst.type)) {
                 if (with_labels && inst_operand_might_be_label(inst.type)) {
-                    std::cout << " " << jmp_addr_label_names.at(inst.operand);
+                    std::cout << " " << jmp_addr_label_names.at(inst.operand.as_ptr());
                 } else {
-                    std::cout << " " << inst.operand;
+                    switch (inst.operand.get_type()) {
+                    case Nan_Type::DOUBLE:
+                        // prints in scientific notation
+                        std::cout << " " << inst.operand.as_double();
+                        break;
+
+                    case Nan_Type::INT:
+                        std::cout << " " << inst.operand.as_int();
+                        break;
+
+                    case Nan_Type::PTR:
+                        std::cout << " " << inst.operand.as_ptr();
+                        break;
+
+                    case Nan_Type::EXCEPTION:
+                    default:
+                        std::cerr << "ERROR: Unknown variable data type in the stack." << std::endl;
+                        exit(1);
+                    }
                 }
             }
 
@@ -301,5 +368,4 @@ struct Program {
         }
     }
 };
-
 typedef struct Program Program;

@@ -27,8 +27,6 @@ void Vm::execute_program(Inst program[], const size_t program_size) {
             exception_handler(exception);
             exit(1);
         }
-
-        this->dump_stack(); // debug
     }
 
     std::cout << "Program Terminated." << std::endl;
@@ -55,7 +53,7 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         if (sp >= STACK_CAP)
             return Exception_Type::EXCEPTION_STACK_OVERFLOW;
 
-        stack[sp] = inst.operand;
+        stack[sp] = Nan_Box(inst.operand);
         sp++;
         break;
 
@@ -68,7 +66,7 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
 
     case Inst_Type::INST_ADD:
         if (sp < 2)
-                return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
 
         stack[sp-2] += stack[sp-1];
         sp--;
@@ -76,7 +74,7 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
 
     case Inst_Type::INST_SUB:
         if (sp < 2)
-                return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
 
         stack[sp-2] -= stack[sp-1];
         sp--;
@@ -84,7 +82,7 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
 
     case Inst_Type::INST_MUL:
         if (sp < 2)
-                return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
 
         stack[sp-2] *= stack[sp-1];
         sp--;
@@ -92,21 +90,18 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
 
     case Inst_Type::INST_DIV:
         if (sp < 2)
-                return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
-
-        if (inst.operand == 0)
-            return Exception_Type::EXCEPTION_DIV_BY_ZERO;
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
 
         stack[sp-2] /= stack[sp-1];
         sp--;
         break;
 
     case Inst_Type::INST_JMP:
-        // no need to check for negative addrs because Word is unsigned
-        if (inst.operand >= current_program_size)
+        // no need to check for negative addrs
+        if (inst.operand.as_ptr() >= (void*)current_program_size)
             return Exception_Type::EXCEPTION_INVALID_JMP_ADDR;
 
-        ip = inst.operand;
+        ip = (uint64_t)inst.operand.as_ptr();
         return Exception_Type::EXCEPTION_OK;
 
     case Inst_Type::INST_HALT:
@@ -120,13 +115,14 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         if (sp < 2)
             return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
 
-        stack[sp-2] = stack[sp-2] == stack[sp-1];
+        // stack[sp-2] = stack[sp-2] == stack[sp-1];
+        stack[sp-2].box_int(stack[sp-2] == stack[sp-1]);
         sp--;
         break;
 
     case Inst_Type::INST_JMP_IF:
-        if (stack[sp-1] == 1) {
-            ip = inst.operand;
+        if (stack[sp-1] == Nan_Box(1)) {
+            ip = (uint64_t)inst.operand.as_ptr();
             return Exception_Type::EXCEPTION_OK;
         }
         sp--;
@@ -139,8 +135,34 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         if (sp >= STACK_CAP)
             return Exception_Type::EXCEPTION_STACK_OVERFLOW;
 
-        stack[sp] = stack[sp-inst.operand-1];
+        if (sp-inst.operand.as_int() <= 0)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (sp-inst.operand.as_int() > sp)
+            return Exception_Type::EXCEPTION_STACK_OVERFLOW;
+
+        stack[sp] = stack[sp-inst.operand.as_int()-1];
         sp++;
+        break;
+
+    case Inst_Type::INST_DUMP:
+        this->dump_stack();
+        break;
+
+    case Inst_Type::INST_SWAP:
+        if (sp < 1)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (sp >= STACK_CAP)
+            return Exception_Type::EXCEPTION_STACK_OVERFLOW;
+
+        if (sp-inst.operand.as_int() <= 0)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (sp-inst.operand.as_int() > sp)
+            return Exception_Type::EXCEPTION_STACK_OVERFLOW;
+
+        std::swap(stack[sp-1], stack[sp-inst.operand.as_int()-1]);
         break;
 
     case Inst_Type::INST_COUNT:
@@ -150,6 +172,10 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
 
     ip++;
 
+    // check for exceptions in the nan types
+    if (stack[sp-1].get_type() == Nan_Type::EXCEPTION)
+        return stack[sp-1].as_exception();
+
     // nothing went wrong
     return Exception_Type::EXCEPTION_OK;
 }
@@ -158,7 +184,24 @@ void Vm::dump_stack() {
     // print the stack
     std::cout << "Vm Stack (" << sp << " element" << (sp != 1 ? "s" : "") << "):" << std::endl;
     for (size_t i = 0; i < sp; i++) {
-        std::cout << "    # " << stack[i] << std::endl;
+        switch (stack[i].get_type()) {
+        case Nan_Type::DOUBLE:
+            std::cout << "    # Double: " << stack[i].as_double() << std::endl;
+            break;
+
+        case Nan_Type::INT:
+            std::cout << "    # Int: " << stack[i].as_int() << std::endl;
+            break;
+
+        case Nan_Type::PTR:
+            std::cout << "    # Ptr: " << stack[i].as_ptr() << std::endl;
+            break;
+
+        case Nan_Type::EXCEPTION:
+        default:
+            std::cerr << "ERROR: Unknown variable data type in the stack." << std::endl;
+            exit(1);
+        }
     }
 
     if (sp == 0)

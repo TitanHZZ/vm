@@ -1,0 +1,29 @@
+# test different number operations
+    push 1
+    push 1.2
+    add # no need for fp specific instructions
+    dump
+
+    push 5e-06 # supports scientific notation
+    div # simple fp arithmetic
+    dump
+
+    pop
+    push -1
+    push 5
+    add # negative numbers
+    dump
+
+    pop
+    push -324,4234
+    push 23.31
+    mul # supports both '.' and ','
+    dump
+
+    pop
+    push 355
+    push 113
+    div # simple pi calculation
+    dump
+
+    exit

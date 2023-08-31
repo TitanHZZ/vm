@@ -30,6 +30,34 @@ void exception_handler(Exception_Type exception) {
         std::cerr << "'EXCEPTION_DIV_BY_ZERO'" << std::endl;
         exit(1);
 
+    case EXCEPTION_UNKNOWN_STACK_DATA_TYPE:
+        std::cerr << "'EXCEPTION_UNKNOWN_STACK_DATA_TYPE'" << std::endl;
+        exit(1);
+
+    case EXCEPTION_SUBTRACT_POINTER_AND_DOUBLE:
+        std::cerr << "'EXCEPTION_SUBTRACT_POINTER_AND_DOUBLE'" << std::endl;
+        exit(1);
+
+    case EXCEPTION_SUBTRACT_POINTER_AND_INT:
+        std::cerr << "'EXCEPTION_SUBTRACT_POINTER_AND_INT'" << std::endl;
+        exit(1);
+
+    case EXCEPTION_ADD_POINTER_AND_DOUBLE:
+        std::cerr << "'EXCEPTION_ADD_POINTER_AND_DOUBLE'" << std::endl;
+        exit(1);
+
+    case EXCEPTION_ADD_TWO_POINTERS:
+        std::cerr << "'EXCEPTION_ADD_TWO_POINTERS'" << std::endl;
+        exit(1);
+
+    case EXCEPTION_MUL_POINTER:
+        std::cerr << "'EXCEPTION_MUL_POINTER'" << std::endl;
+        exit(1);
+
+    case EXCEPTION_DIV_POINTER:
+        std::cerr << "'EXCEPTION_DIV_POINTER'" << std::endl;
+        exit(1);
+
     default:
         std::cerr << "when handling another exception: 'EXCEPTION_UNKNOWN'" << std::endl;
         exit(1);

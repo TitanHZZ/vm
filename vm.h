@@ -4,9 +4,10 @@
 #include "exceptions.h"
 #include "program.h"
 #include "inst.h"
+#include "nan_box.h"
 
 #define STACK_CAP 1024
-#define EXECUTION_LIMIT 100
+#define EXECUTION_LIMIT 10000
 
 class Vm {
 public:
@@ -25,9 +26,9 @@ public:
     void dump_stack();
 
 private:
-    Word stack[STACK_CAP];
+    Nan_Box stack[STACK_CAP];
     size_t sp;
 
-    Word ip;
+    uint64_t ip;
     size_t current_program_size;
 };
