@@ -58,6 +58,10 @@ void exception_handler(Exception_Type exception) {
         std::cerr << "'EXCEPTION_DIV_POINTER'" << std::endl;
         exit(1);
 
+    case EXCEPTION_INVALID_RET_ADDR:
+        std::cerr << "'EXCEPTION_INVALID_RET_ADDR'" << std::endl;
+        exit(1);
+
     default:
         std::cerr << "when handling another exception: 'EXCEPTION_UNKNOWN'" << std::endl;
         exit(1);

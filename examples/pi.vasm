@@ -1,6 +1,7 @@
 # program that aproximates the value of pi
 # https://en.wikipedia.org/wiki/Approximations_of_%CF%80
 
+# C code:
 # int den = 3;
 # double result_pi = 1; double sign = -1;
 # for (int i = 0; i < 100; i++) {
@@ -50,7 +51,7 @@ loop:
     jmp loop
 
 end:
-    # finish pi calculation and clezn up the stack
+    # finish pi calculation and clean up the stack
     pop
     pop
     pop

@@ -165,6 +165,29 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         std::swap(stack[sp-1], stack[sp-inst.operand.as_int()-1]);
         break;
 
+    case Inst_Type::INST_CALL:
+        if (sp >= STACK_CAP)
+            return Exception_Type::EXCEPTION_STACK_OVERFLOW;
+
+        if (inst.operand.as_ptr() >= (void*)current_program_size)
+            return Exception_Type::EXCEPTION_INVALID_JMP_ADDR;
+
+        stack[sp] = Nan_Box((void*)(ip+1));
+        ip = (uint64_t)inst.operand.as_ptr();
+        sp++;
+        return Exception_Type::EXCEPTION_OK;
+
+    case Inst_Type::INST_RET:
+        if (sp < 1)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (stack[sp-1].get_type() != Nan_Type::PTR)
+            return Exception_Type::EXCEPTION_INVALID_RET_ADDR;
+
+        ip = (uint64_t)stack[sp-1].as_ptr();
+        sp--;
+        return Exception_Type::EXCEPTION_OK;
+
     case Inst_Type::INST_COUNT:
     default:
         return Exception_Type::EXCEPTION_UNKNOWN_INSTRUCTION;
