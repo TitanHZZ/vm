@@ -215,6 +215,83 @@ Nan_Box& Nan_Box::operator/=(Nan_Box& rhs) {
     return *this;
 }
 
+Nan_Box& Nan_Box::operator<<=(Nan_Box& rhs) {
+    const Nan_Type type = this->get_type();
+    const Nan_Type rhs_type = rhs.get_type();
+
+    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
+        this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
+    } else {
+        this->box_int(this->as_int() << rhs.as_int());
+    }
+
+    return *this;
+}
+
+Nan_Box& Nan_Box::operator>>=(Nan_Box& rhs) {
+    const Nan_Type type = this->get_type();
+    const Nan_Type rhs_type = rhs.get_type();
+
+    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
+        this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
+    } else {
+        this->box_int(this->as_int() >> rhs.as_int());
+    }
+
+    return *this;
+}
+
+Nan_Box& Nan_Box::operator&=(Nan_Box& rhs) {
+    const Nan_Type type = this->get_type();
+    const Nan_Type rhs_type = rhs.get_type();
+
+    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
+        this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
+    } else {
+        this->box_int(this->as_int() & rhs.as_int());
+    }
+
+    return *this;
+}
+
+Nan_Box& Nan_Box::operator|=(Nan_Box& rhs) {
+    const Nan_Type type = this->get_type();
+    const Nan_Type rhs_type = rhs.get_type();
+
+    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
+        this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
+    } else {
+        this->box_int(this->as_int() | rhs.as_int());
+    }
+
+    return *this;
+}
+
+Nan_Box& Nan_Box::operator^=(Nan_Box& rhs) {
+    const Nan_Type type = this->get_type();
+    const Nan_Type rhs_type = rhs.get_type();
+
+    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
+        this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
+    } else {
+        this->box_int(this->as_int() ^ rhs.as_int());
+    }
+
+    return *this;
+}
+
+Nan_Box& Nan_Box::operator~() {
+    const Nan_Type type = this->get_type();
+
+    if (type != Nan_Type::INT) {
+        this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
+    } else {
+        this->box_int(~this->as_int());
+    }
+
+    return *this;
+}
+
 bool Nan_Box::operator==(Nan_Box& rhs) {
     const Nan_Type type = this->get_type();
     const Nan_Type rhs_type = rhs.get_type();

@@ -25,6 +25,12 @@ typedef enum {
     INST_RET,
     INST_NATIVE,
     INST_PRINT,
+    INST_SHL,
+    INST_SHR,
+    INST_AND,
+    INST_OR,
+    INST_XOR,
+    INST_NOT,
     INST_COUNT // this is not a valid instruction (used to known how many instructions we have)
 } Inst_Type;
 
@@ -52,6 +58,12 @@ typedef struct {
 #define MAKE_INST_RET()       (Inst) {.type = Inst_Type::INST_RET, .operand = 0}
 #define MAKE_INST_NATIVE(val) (Inst) {.type = Inst_Type::INST_NATIVE, .operand = val}
 #define MAKE_INST_PRINT(val)  (Inst) {.type = Inst_Type::INST_PRINT, .operand = val}
+#define MAKE_INST_SHL()       (Inst) {.type = Inst_Type::INST_SHL, .operand = 0}
+#define MAKE_INST_SHR()       (Inst) {.type = Inst_Type::INST_SHR, .operand = 0}
+#define MAKE_INST_AND()       (Inst) {.type = Inst_Type::INST_AND, .operand = 0}
+#define MAKE_INST_OR()        (Inst) {.type = Inst_Type::INST_OR, .operand = 0}
+#define MAKE_INST_XOR()       (Inst) {.type = Inst_Type::INST_XOR, .operand = 0}
+#define MAKE_INST_NOT()       (Inst) {.type = Inst_Type::INST_NOT, .operand = 0}
 
 static const char *inst_type_as_cstr(const Inst_Type& inst) {
     switch (inst) {
@@ -74,6 +86,12 @@ static const char *inst_type_as_cstr(const Inst_Type& inst) {
     case Inst_Type::INST_RET:      return "ret";
     case Inst_Type::INST_NATIVE:   return "native";
     case Inst_Type::INST_PRINT:    return "print";
+    case Inst_Type::INST_SHL:      return "shl";
+    case Inst_Type::INST_SHR:      return "shr";
+    case Inst_Type::INST_AND:      return "and";
+    case Inst_Type::INST_OR:       return "or";
+    case Inst_Type::INST_XOR:      return "xor";
+    case Inst_Type::INST_NOT:      return "not";
     case Inst_Type::INST_COUNT:
     default:
         std::cerr << "ERROR: Could not parse instruction, unknown instruction." << std::endl;

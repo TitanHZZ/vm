@@ -1,0 +1,27 @@
+# simple program to test bitwise operators
+
+main:
+    push 1
+    push 2
+    shl
+    print 0
+    not
+    print 0
+    push 3
+    shr
+    print 0
+    not
+    print 0
+    push 5
+    add
+    print 0
+    push 7
+    and
+    print 0
+    push 9
+    or
+    print 0
+    push 13
+    xor
+    print 0
+    exit

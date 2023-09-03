@@ -42,6 +42,12 @@ public:
     Nan_Box& operator-=(Nan_Box& rhs);
     Nan_Box& operator*=(Nan_Box& rhs);
     Nan_Box& operator/=(Nan_Box& rhs);
+    Nan_Box& operator<<=(Nan_Box& rhs);
+    Nan_Box& operator>>=(Nan_Box& rhs);
+    Nan_Box& operator&=(Nan_Box& rhs);
+    Nan_Box& operator|=(Nan_Box& rhs);
+    Nan_Box& operator^=(Nan_Box& rhs);
+    Nan_Box& operator~();
     bool operator==(Nan_Box& rhs);
 
 private:

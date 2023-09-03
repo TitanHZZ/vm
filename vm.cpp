@@ -225,6 +225,53 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         }
         break;
 
+    case Inst_Type::INST_SHL:
+        if (sp < 2)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        stack[sp-2] <<= stack[sp-1];
+        sp--;
+        break;
+
+    case Inst_Type::INST_SHR:
+        if (sp < 2)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        stack[sp-2] >>= stack[sp-1];
+        sp--;
+        break;
+
+    case INST_AND:
+        if (sp < 2)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        stack[sp-2] &= stack[sp-1];
+        sp--;
+        break;
+
+    case INST_OR:
+        if (sp < 2)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        stack[sp-2] |= stack[sp-1];
+        sp--;
+        break;
+
+    case INST_XOR:
+        if (sp < 2)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        stack[sp-2] ^= stack[sp-1];
+        sp--;
+        break;
+
+    case INST_NOT:
+        if (sp < 1)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        stack[sp-1] = ~stack[sp-1];
+        break;
+
     case Inst_Type::INST_COUNT:
     default:
         return Exception_Type::EXCEPTION_UNKNOWN_INSTRUCTION;

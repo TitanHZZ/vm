@@ -16,6 +16,7 @@ typedef enum {
     EXCEPTION_ADD_TWO_POINTERS,
     EXCEPTION_MUL_POINTER,
     EXCEPTION_DIV_POINTER,
+    EXCEPTION_BITWISE_NON_INT
 } Exception_Type;
 
 void exception_handler(Exception_Type exception);
