@@ -28,8 +28,6 @@ void Vm::execute_program(Inst program[], const size_t program_size) {
             exit(1);
         }
     }
-
-    std::cout << "Program Terminated." << std::endl;
 }
 
 void Vm::execute_program(const char *path) {
@@ -188,6 +186,45 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         sp--;
         return Exception_Type::EXCEPTION_OK;
 
+    case Inst_Type::INST_NATIVE:
+        // we assume that all the native functions return exactly one value
+        if (sp < 1)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        // call the native functions
+        (this->*native_funcs_addrs[inst.operand.as_int()])();
+        break;
+
+    case Inst_Type::INST_PRINT:
+        if (sp < 1)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (sp-inst.operand.as_int() <= 0)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (sp-inst.operand.as_int() > sp)
+            return Exception_Type::EXCEPTION_STACK_OVERFLOW;
+
+        switch (stack[sp-inst.operand.as_int()-1].get_type()) {
+        case Nan_Type::DOUBLE:
+            std::cout << stack[sp-inst.operand.as_int()-1].as_double() << std::endl;
+            break;
+
+        case Nan_Type::INT:
+            std::cout << stack[sp-inst.operand.as_int()-1].as_int() << std::endl;
+            break;
+
+        case Nan_Type::PTR:
+            std::cout << stack[sp-inst.operand.as_int()-1].as_ptr() << std::endl;
+            break;
+
+        case Nan_Type::EXCEPTION:
+        default:
+            std::cerr << "ERROR: Unknown variable data type in the stack." << std::endl;
+            exit(1);
+        }
+        break;
+
     case Inst_Type::INST_COUNT:
     default:
         return Exception_Type::EXCEPTION_UNKNOWN_INSTRUCTION;
@@ -229,4 +266,29 @@ void Vm::dump_stack() {
 
     if (sp == 0)
         std::cout << "    [Empty]" << std::endl;
+}
+
+// native functions
+// WARNING: we assume that the state of the machine was checked before calling this native functions
+
+void Vm::native_malloc() {
+    // get the size of the memory to allocate
+    const size_t size = stack[sp-1].as_int();
+
+    // allocate the memory
+    const void *const ptr = malloc(size);
+
+    // store the pointer in the stack
+    stack[sp-1].box_ptr(ptr);
+}
+
+void Vm::native_free() {
+    // get the pointer to free
+    void *const ptr = stack[sp-1].as_ptr();
+
+    // free the memory
+    free(ptr);
+
+    // comsume the addr
+    sp--;
 }

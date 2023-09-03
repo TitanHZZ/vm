@@ -52,13 +52,5 @@ loop:
     jmp loop
 
 end:
-    # clean the stack
-    pop
-    pop
-    pop
-    pop
-    swap 1
-    pop
-
-    dump
+    print 4
     exit

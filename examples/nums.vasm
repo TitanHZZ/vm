@@ -2,28 +2,28 @@
     push 1
     push 1.2
     add # no need for fp specific instructions
-    dump
+    print 0
 
     push 5e-06 # supports scientific notation
     div # simple fp arithmetic
-    dump
+    print 0
 
     pop
     push -1
     push 5
     add # negative numbers
-    dump
+    print 0
 
     pop
     push -324,4234
     push 23.31
     mul # supports both '.' and ','
-    dump
+    print 0
 
     pop
     push 355
     push 113
     div # simple pi calculation
-    dump
+    print 0
 
     exit

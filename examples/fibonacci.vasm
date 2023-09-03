@@ -1,10 +1,27 @@
-# prints fibonacci sequence
+# simple program that prints the fibonacci sequence
+
+main:
+    push 2 # index (starts at 2 because of the first two numbers in the sequence)
+    push 0
     push 1
-    push 1
+    print 1
+    print 0
 
 loop:
-    dup 1
-    dup 1
+    swap 2
+    dup 0
+    push 20 # number of iterations
+    equ
+    jif end
+    push 1
     add
-    dump
+    swap 2
+
+    dup 0
+    swap 2
+    add
+    print 0
     jmp loop
+
+end:
+    exit

@@ -51,16 +51,9 @@ loop:
     jmp loop
 
 end:
-    # finish pi calculation and clean up the stack
-    pop
-    pop
-    pop
+    # finish pi calculation and print the result
+    swap 3
     push 4
     mul
-    swap 1
-    pop
-    swap 1
-    pop
-
-    dump
+    print 0
     exit

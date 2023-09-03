@@ -30,5 +30,5 @@ sin:
 main:
     push 13 # degrees
     call sin
-    dump # print the result
+    print 0 # print the result
     exit
