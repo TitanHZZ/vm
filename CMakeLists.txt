@@ -12,8 +12,17 @@ list(REMOVE_ITEM src
     "${CMAKE_CURRENT_SOURCE_DIR}/dvasm.cpp"
 )
 
-set(CMAKE_CXX_STANDARD 23)
-add_compile_options(-Wall -Wextra -Wswitch-enum)
+set(CMAKE_CXX_STANDARD 20)
+# taken from: https://stackoverflow.com/q/45955272
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall")
+    # default debug flags are OK 
+    set(CMAKE_CXX_FLAGS_RELEASE "{CMAKE_CXX_FLAGS_RELEASE} /O2")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wswitch-enum")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+endif()
 
 # main target (the vm executable that actually executes programs in '.vm' files)
 add_executable(vme ${src} "vme.cpp")
