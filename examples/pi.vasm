@@ -17,6 +17,9 @@
 # result
 # sign
 
+# number of iterations
+%define N 100
+
     push 0  # index
     push 3  # den
     push 1  # result
@@ -26,7 +29,7 @@ loop:
     push 0
     swap 4
     dup 0
-    push 100 # number of iterations
+    push N
     equ
     jif end
     push 1

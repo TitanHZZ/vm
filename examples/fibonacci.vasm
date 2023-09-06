@@ -1,5 +1,8 @@
 # simple program that prints the fibonacci sequence
 
+# number of iterations
+%define N 20
+
 main:
     push 2 # index (starts at 2 because of the first two numbers in the sequence)
     push 0
@@ -10,7 +13,7 @@ main:
 loop:
     swap 2
     dup 0
-    push 20 # number of iterations
+    push N
     equ
     jif end
     push 1

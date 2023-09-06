@@ -51,7 +51,7 @@ void Program::string_trim(std::string& str) {
     while (str.size() > 0 && str.at(0) == ' ') str.erase(str.begin());      // trim left
     while (str.size() > 0 && str.at(str.size() - 1) == ' ') str.pop_back(); // trim right
 }
- 
+
 void Program::string_split_by_delimeter(std::string& line, const char ch, const bool get_first_substring) {
     if (line.size() < 1)
         return;
@@ -69,16 +69,19 @@ void Program::string_split_by_delimeter(std::string& line, const char ch, const 
     }
 }
 
-void Program::get_label_definitions(std::ifstream& file, std::unordered_map<std::string, Label>& labels) {
+void Program::get_label_definitions(std::ifstream& file, const char *path, std::unordered_map<std::string, Label>& labels) {
+    // file relative positions
     size_t line_count = 0;
     size_t inst_count = 0;
-    std::string line;
 
+    std::string line;
     while (std::getline(file, line)) {
         line_count++;
 
         // ignore comments in same line as instruction and ignore comment lines
         string_split_by_delimeter(line, '#', true);
+        // ignore preprocessor define
+        string_split_by_delimeter(line, '%', true);
         string_trim(line);
 
         // ignore empty lines
@@ -90,47 +93,64 @@ void Program::get_label_definitions(std::ifstream& file, std::unordered_map<std:
             // get label and check for spaces (spaces are not allowed in labels)
             string_split_by_delimeter(line, ':', true);
             if (line.find_first_of(' ') != std::string::npos) {
-                std::cerr << "ERROR: Label with spaces defined at " << line_count << "." << std::endl;
+                std::cerr << "ERROR: Label with spaces was defined." << std::endl;
+                std::cerr << "      " << path << ":" << line_count << std::endl;
                 exit(1);
             }
 
             string_trim(line);
             if (line.size() < 1) {
-                std::cerr << "ERROR: Empty label defined at line " << line_count << "." << std::endl;
+                std::cerr << "ERROR: Empty label was defined." << std::endl;
+                std::cerr << "      " << path << ":" << line_count << std::endl;
                 exit(1);
             }
 
             // if we find a label that is already in the 'labels' map, we got a duplicate label
             if (labels.contains(line)) {
                 std::cerr << "ERROR: Duplicate label definition:" << std::endl;
-                std::cerr << "    Label '" << line << "' defined at line " << labels.at(line).line_number << ", was redefined at line " << line_count << "." << std::endl;
+                if (labels.at(line).file_name == path) {
+                    // label was redefined in the same file as the 'original' label
+                    std::cerr << "      Label '" << line << "' defined at line " << labels.at(line).line_number << ", was redefined at line " << line_count << "." << std::endl;
+                    std::cerr << "      " << path << std::endl;
+                } else {
+                    std::cerr << "      Previously defined at " << labels.at(line).file_name << ":" << labels.at(line).line_number << std::endl;
+                    std::cerr << "      Redefined at " << path << ":" << line_count << std::endl;
+                }
+
                 exit(1);
             }
 
-            labels.emplace(std::move(line), Label {.points_to = (void*)inst_count, .line_number = line_count});
+            labels.emplace(std::move(line), Label {.points_to = (void*)inst_count, .line_number = line_count, .file_name = path});
         } else {
             // if there is no label or comment and it is not en empty line, we have an instruction
             inst_count++;
         }
     }
 
-    // make file ptr point back top the beginning
+    // make file ptr point back to the beginning
     file.clear();
     file.seekg(0, std::ios::beg);
 }
 
 void Program::parse_from_file(const char *path) {
+    // hash table to keep track of all labels in the source code
+    std::unordered_map<std::string, Label> labels;
+
+    // keep track of preprocessor defines
+    std::unordered_map<std::string, std::string> preprocessor_defines;
+
+    this->parse_source_code(path, labels, preprocessor_defines);
+}
+
+void Program::parse_source_code(const char *path, std::unordered_map<std::string, Label>& labels, std::unordered_map<std::string, std::string>& preprocessor_defines) {
     std::ifstream file(path, std::ios::in);
     if (!file.is_open()) {
         std::cerr << "ERROR: An error occured when trying to read a program asm from '" << path << "'." << std::endl;
         exit(1);
     }
 
-    // hash table to keep track of all labels in the source code
-    std::unordered_map<std::string, Label> labels;
-
     // get all the labels and the addrs they point to
-    get_label_definitions(file, labels);
+    get_label_definitions(file, path, labels);
 
     size_t line_count = 0;
     std::string line;
@@ -146,6 +166,47 @@ void Program::parse_from_file(const char *path) {
         // ignore empty lines
         if (line.size() < 1)
             continue;
+
+        // check for preprocessor directives
+        if (line.find_first_of('%') != std::string::npos) {
+            // found preprocessor directive
+            string_split_by_delimeter(line, '%', false);
+            string_trim(line);
+
+            const size_t directive_first_space_idx = line.find_first_of(' ');
+            std::string directive_operation = line.substr(0, directive_first_space_idx);
+            if (directive_operation == "define") {
+                // found 'define' directive, parse it
+                const size_t directive_last_space_idx = line.find_last_of(' ');
+                std::string directive_name = line.substr(directive_first_space_idx + 1, directive_last_space_idx - directive_first_space_idx - 1);
+                string_trim(directive_name);
+                const std::string directive_value = line.substr(directive_last_space_idx + 1, line.size() - directive_last_space_idx - 1);
+
+                // add the define to the map
+                if (preprocessor_defines.contains(directive_name)) {
+                    std::cerr << "ERROR: Duplicate preprocessor define '" << directive_name << "'." << std::endl;
+                    std::cerr << "      " << path << ":" << line_count << std::endl;
+                    exit(1);
+                }
+
+                preprocessor_defines.emplace(std::move(directive_name), std::move(directive_value));
+            } else if (directive_operation == "include") {
+                // found 'include' directive, parse it
+                std::string directive_path = line.substr(directive_first_space_idx + 1, line.size() - directive_first_space_idx - 1);
+                // remove quotes if they exist
+                std::replace(directive_path.begin(), directive_path.end(), '"', ' ');
+                string_trim(directive_path);
+
+                // parse the file
+                parse_source_code(directive_path.c_str(), labels, preprocessor_defines);
+            } else {
+                std::cerr << "ERROR: Unknown preprocessor directive '" << directive_operation << "'." << std::endl;
+                std::cerr << "      " << path << ":" << line_count << std::endl;
+                exit(1);
+            }
+
+            continue;
+        }
 
         std::string operand = "";
         std::string instruction = "";
@@ -171,6 +232,10 @@ void Program::parse_from_file(const char *path) {
             Inst new_inst;
             // parse the operands
             if (inst_requires_operand((Inst_Type)inst_to_check) == true) {
+                // replace the operand with the define value
+                if (preprocessor_defines.contains(operand))
+                    operand = preprocessor_defines.at(operand);
+
                 if (operand != "") {
                     // fill in the new instruction
                     new_inst.type = (Inst_Type) inst_to_check;
@@ -187,22 +252,22 @@ void Program::parse_from_file(const char *path) {
                             new_inst.operand = Nan_Box((void*)std::stol(operand));
                         } else {
                             // operand is an invalid addr or label
-                            std::cerr << "ERROR: Invalid address or undefind label '" << operand << "' at line " << line_count << "." << std::endl;
+                            std::cerr << "ERROR: Invalid address or undefind label '" << operand << "'." << std::endl;
+                            std::cerr << "      " << path << ":" << line_count << std::endl;
                             exit(1);
                         }
                     } else if (inst_accepts_fp_operand((Inst_Type)inst_to_check)) {
                         char *end_ptr = nullptr;
                         new_inst.operand = Nan_Box(std::strtol(operand.c_str(), &end_ptr, 10));
                         if ((size_t)(end_ptr - operand.c_str()) != operand.size()) {
-                            // replace ',' with '.'
-                            const size_t comma_index = operand.find_first_of(',');
-                            if (comma_index != std::string::npos)
-                                operand.replace(comma_index, 1, ".");
+                            // replace ',' with '.' if it exists
+                            std::replace(operand.begin(), operand.end(), ',', '.');
 
                             // could not parse as int, try now as double
                             new_inst.operand = Nan_Box(std::strtod(operand.c_str(), &end_ptr));
                             if ((size_t)(end_ptr - operand.c_str()) != operand.size()) {
-                                std::cerr << "ERROR: Invalid operand '" << operand << "' at line " << line_count << "." << std::endl;
+                                std::cerr << "ERROR: Invalid operand '" << operand << "'." << std::endl;
+                                std::cerr << "      " << path << ":" << line_count << std::endl;
                                 exit(1);
                             }
                         }
@@ -218,6 +283,7 @@ void Program::parse_from_file(const char *path) {
 
                         if (!found) {
                             std::cerr << "ERROR: Invalid native function call to '" << operand << "'." << std::endl;
+                            std::cerr << "      " << path << ":" << line_count << std::endl;
                             exit(1);
                         }
                     } else {
@@ -230,11 +296,13 @@ void Program::parse_from_file(const char *path) {
 
                             // operand was not entirely processed
                             if (char_processed_count != operand.size()) {
-                                std::cerr << "ERROR: Invalid operand '" << operand << "' at line " << line_count << "." << std::endl;
+                                std::cerr << "ERROR: Invalid operand '" << operand << "'." << std::endl;
+                                std::cerr << "      " << path << ":" << line_count << std::endl;
                                 exit(1);
                             }
                         } catch(const std::exception& e) {
-                            std::cerr << "ERROR: Invalid operand '" << operand << "' at line " << line_count << "." << std::endl;
+                            std::cerr << "ERROR: Invalid operand '" << operand << "'." << std::endl;
+                            std::cerr << "      " << path << ":" << line_count << std::endl;
                             exit(1);
                         }
                     }
@@ -249,7 +317,8 @@ void Program::parse_from_file(const char *path) {
                     }*/
                 } else {
                     std::cerr << "ERROR: An error occured when parsing asm file:" << std::endl;
-                    std::cerr << "    Instruction '" << inst_type_as_cstr((Inst_Type)inst_to_check) << "' on line " << line_count << " requires an operand." << std::endl;
+                    std::cerr << "      Instruction '" << inst_type_as_cstr((Inst_Type)inst_to_check) << "' requires an operand." << std::endl;
+                    std::cerr << "      " << path << ":" << line_count << std::endl;
                     exit(1);
                 }
             } else {
@@ -258,7 +327,8 @@ void Program::parse_from_file(const char *path) {
                     new_inst.type = (Inst_Type)inst_to_check;
                 } else {
                     std::cerr << "ERROR: An error occured when parsing asm file:" << std::endl;
-                    std::cerr << "    Instruction '" << inst_type_as_cstr((Inst_Type)inst_to_check) << "' on line " << line_count << " does not require an operand." << std::endl;
+                    std::cerr << "      Instruction '" << inst_type_as_cstr((Inst_Type)inst_to_check) << "' does not require an operand." << std::endl;
+                    std::cerr << "      " << path << ":" << line_count << std::endl;
                     exit(1);
                 }
             }
@@ -269,7 +339,8 @@ void Program::parse_from_file(const char *path) {
         }
 
         if (parsed_inst == false) {
-            std::cerr << "ERROR: Unknown instruction '" << instruction <<  "' on line " << line_count <<"." << std::endl;
+            std::cerr << "ERROR: Unknown instruction '" << instruction <<  "'." << std::endl;
+            std::cerr << "      " << path << ":" << line_count << std::endl;
             exit(1);
         }
     }

@@ -1,0 +1,8 @@
+# simple program to test the preprocessor define statement
+# the paths in the include statements do not need quotes and can have spaces
+%define N 10
+
+main:
+    push N # simple macro expansion
+    print 0
+    exit

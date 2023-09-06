@@ -1,8 +1,11 @@
 # simple demonstration of the use of native functions
 
+# number of bytes to allocate
+%define N 100
+
 main:
     # call 'malloc' c function (allocates memory on the real system)
-    push 100 # 100 bytes
+    push N
     native malloc
     print 0 # print the address of the allocated memory
     native free

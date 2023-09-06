@@ -17,6 +17,9 @@
 # fact
 # prev
 
+# number of iterations
+%define N 12
+
     push 0 # index
     push 1 # result
     push 1 # fact
@@ -26,7 +29,7 @@ loop:
     push 0
     swap 4
     dup 0
-    push 12 # number of iterations
+    push N
     equ
     jif end
     push 1
