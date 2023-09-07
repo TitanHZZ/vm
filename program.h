@@ -60,7 +60,7 @@ public:
 
         const size_t inst_count = file_size / sizeof(Inst);
         program.insts.reserve((size_t)inst_count); // reserve the size necessary to store all the instructions
-        for (int i = 0; i < inst_count; i++) {
+        for (size_t i = 0; i < inst_count; i++) {
             Inst new_inst;
             ifs.read((char *)&new_inst, sizeof(Inst));
             program.insts.push_back(new_inst);
