@@ -276,7 +276,7 @@ void Program::parse_source_code(const char *path, std::unordered_map<std::string
                         bool found = false;
                         for (size_t i = 0; i < Vm::native_funcs_count; i++) {
                             if (operand == Vm::native_funcs_names[i]) {
-                                new_inst.operand = Nan_Box(i);
+                                new_inst.operand = Nan_Box(static_cast<uint64_t>(i));
                                 found = true;
                             }
                         }
