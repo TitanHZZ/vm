@@ -45,7 +45,8 @@ public:
     // basic program deserialization
     friend std::ifstream& operator>>(std::ifstream& ifs, Program& program) {
         ifs.seekg(0, std::ios::end); // seek to end of file
-        const int file_size = ifs.tellg(); // size in bytes
+        const std::streamoff file_size = ifs.tellg(); // size in bytes
+        // const int file_size = ifs.tellg(); // size in bytes
         if (file_size == -1) {
             std::cout << "ERROR: Could not read file." << std::endl;
             exit(1);
@@ -57,7 +58,7 @@ public:
             exit(1);
         }
 
-        const int inst_count = file_size / sizeof(Inst);
+        const size_t inst_count = file_size / sizeof(Inst);
         program.insts.reserve((size_t)inst_count); // reserve the size necessary to store all the instructions
         for (int i = 0; i < inst_count; i++) {
             Inst new_inst;

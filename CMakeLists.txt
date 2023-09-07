@@ -15,7 +15,7 @@ list(REMOVE_ITEM src
 set(CMAKE_CXX_STANDARD 20)
 # taken from: https://stackoverflow.com/q/45955272
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
     # default debug flags are OK 
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")
 else()
@@ -68,10 +68,10 @@ foreach(idx RANGE ${examples_range})
     set_property(TEST ${example_name}_run PROPERTY PASS_REGULAR_EXPRESSION ${example_out})
 
     # remove the generated '.vm' file
-    add_test(${example_name}_clean rm -f ${example_name}.vm)
+    # taken from: https://stackoverflow.com/a/58136951
+    add_test(NAME ${example_name}_clean COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/${example_name}.vm)
 endforeach()
-# remove the generated executables
-add_test(executable_clean rm -f vasma vme dvasm)
+# TODO: remove the generated target executables
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

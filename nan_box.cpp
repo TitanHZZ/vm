@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdint.h>
 #include <math.h>
+#include <limits>
 
 #include "nan_box.h"
 
@@ -18,26 +19,26 @@
 }*/
 
 Nan_Type Nan_Box::get_type() const {
-    if (!isnan(value))
+    if (!isnan(m_value))
         return Nan_Type::DOUBLE;
 
-    const uint64_t *const value_ptr = (uint64_t*)(&value);
+    const uint64_t *const value_ptr = (uint64_t*)(&m_value);
     return (Nan_Type) ((*value_ptr & TYPE_MASK) >> 48LL);
 }
 
 void Nan_Box::set_type(const Nan_Type type) {
-    value = 0.0 / 0.0; // make a nan
-    uint64_t *const value_ptr = (uint64_t*)(&this->value);
+    m_value = std::numeric_limits<double>::quiet_NaN(); // make a nan
+    uint64_t *const value_ptr = (uint64_t*)(&this->m_value);
     *value_ptr = (*value_ptr & ~TYPE_MASK) | ((uint64_t)type << 48LL);
 }
 
 uint64_t Nan_Box::get_value() const {
-    const uint64_t *const value_ptr = (uint64_t*)(&value);
+    const uint64_t *const value_ptr = (uint64_t*)(&m_value);
     return *value_ptr & VALUE_MASK;
 }
 
 void Nan_Box::set_value(const uint64_t value) {
-    uint64_t *const value_ptr = (uint64_t*)(&this->value);
+    uint64_t *const value_ptr = (uint64_t*)(&this->m_value);
     *value_ptr |= value & VALUE_MASK;
 }
 
@@ -50,10 +51,10 @@ Nan_Box& Nan_Box::operator+=(Nan_Box& rhs) {
     if (type == Nan_Type::DOUBLE) {
         if (rhs_type == Nan_Type::DOUBLE) {
             // sum of two doubles
-            value += rhs.as_double();
+            m_value += rhs.as_double();
         } else if (rhs_type == Nan_Type::INT) {
             // sum of a double and an int
-            this->value += rhs.as_int();
+            this->m_value += rhs.as_int();
         } else if (rhs_type == Nan_Type::PTR) {
             // return an exception (cannot add a pointer and a double)
             this->box_exception(Exception_Type::EXCEPTION_ADD_POINTER_AND_DOUBLE);
@@ -92,10 +93,10 @@ Nan_Box& Nan_Box::operator-=(Nan_Box& rhs) {
     if (type == Nan_Type::DOUBLE) {
         if (rhs_type == Nan_Type::DOUBLE) {
             // subtract two doubles
-            value -= rhs.as_double();
+            m_value -= rhs.as_double();
         } else if (rhs_type == Nan_Type::INT) {
             // subtract an int from a double
-            this->value -= rhs.as_int();
+            this->m_value -= rhs.as_int();
         } else if (rhs_type == Nan_Type::PTR) {
             // return an exception (cannot subtract a pointer and a double)
             this->box_exception(Exception_Type::EXCEPTION_SUBTRACT_POINTER_AND_DOUBLE);
@@ -134,10 +135,10 @@ Nan_Box& Nan_Box::operator*=(Nan_Box& rhs) {
     if (type == Nan_Type::DOUBLE) {
         if (rhs_type == Nan_Type::DOUBLE) {
             // multiply two doubles
-            value *= rhs.as_double();
+            m_value *= rhs.as_double();
         } else if (rhs_type == Nan_Type::INT) {
             // multiply a double and an int
-            this->value *= rhs.as_int();
+            this->m_value *= rhs.as_int();
         } else if (rhs_type == Nan_Type::PTR) {
             // return an exception (cannot multiply a pointer and a double)
             this->box_exception(Exception_Type::EXCEPTION_MUL_POINTER);
@@ -171,14 +172,14 @@ Nan_Box& Nan_Box::operator/=(Nan_Box& rhs) {
                 // return an exception (cannot divide by 0)
                 this->box_exception(Exception_Type::EXCEPTION_DIV_BY_ZERO);
             } else {
-                value /= rhs.as_double();
+                m_value /= rhs.as_double();
             }
         } else if (rhs_type == Nan_Type::INT) {
             if (rhs.as_int() == 0) {
                 // return an exception (cannot divide by 0)
                 this->box_exception(Exception_Type::EXCEPTION_DIV_BY_ZERO);
             } else {
-                this->value /= rhs.as_int();
+                this->m_value /= rhs.as_int();
             }
         } else if (rhs_type == Nan_Type::PTR) {
             // return an exception (cannot divide a double by a pointer)

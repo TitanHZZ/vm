@@ -249,7 +249,7 @@ void Program::parse_source_code(const char *path, std::unordered_map<std::string
                         } else if (std::all_of(operand.begin(), operand.end(), ::isdigit)) {
                             // if the operand is not in the labels map, it needs to be a number(absolute address)
                             // this check also makes sure we dont get any negative addresses
-                            new_inst.operand = Nan_Box((void*)std::stol(operand));
+                            new_inst.operand = Nan_Box((void*)std::stoll(operand));
                         } else {
                             // operand is an invalid addr or label
                             std::cerr << "ERROR: Invalid address or undefind label '" << operand << "'." << std::endl;
@@ -258,7 +258,7 @@ void Program::parse_source_code(const char *path, std::unordered_map<std::string
                         }
                     } else if (inst_accepts_fp_operand((Inst_Type)inst_to_check)) {
                         char *end_ptr = nullptr;
-                        new_inst.operand = Nan_Box(std::strtol(operand.c_str(), &end_ptr, 10));
+                        new_inst.operand = Nan_Box(static_cast<int>(std::strtol(operand.c_str(), &end_ptr, 10)));
                         if ((size_t)(end_ptr - operand.c_str()) != operand.size()) {
                             // replace ',' with '.' if it exists
                             std::replace(operand.begin(), operand.end(), ',', '.');
@@ -292,7 +292,7 @@ void Program::parse_source_code(const char *path, std::unordered_map<std::string
                         // implement that
                         try {
                             size_t char_processed_count = 0;
-                            new_inst.operand = Nan_Box(std::stol(operand, &char_processed_count));
+                            new_inst.operand = Nan_Box(static_cast<int>(std::stol(operand, &char_processed_count)));
 
                             // operand was not entirely processed
                             if (char_processed_count != operand.size()) {
@@ -300,7 +300,7 @@ void Program::parse_source_code(const char *path, std::unordered_map<std::string
                                 std::cerr << "      " << path << ":" << line_count << std::endl;
                                 exit(1);
                             }
-                        } catch(const std::exception& e) {
+                        } catch(const std::exception&) {
                             std::cerr << "ERROR: Invalid operand '" << operand << "'." << std::endl;
                             std::cerr << "      " << path << ":" << line_count << std::endl;
                             exit(1);

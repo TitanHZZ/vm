@@ -214,9 +214,12 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
             std::cout << stack[sp-inst.operand.as_int()-1].as_int() << std::endl;
             break;
 
-        case Nan_Type::PTR:
-            std::cout << stack[sp-inst.operand.as_int()-1].as_ptr() << std::endl;
+        case Nan_Type::PTR: {
+            // taken from: https://www.tutorialspoint.com/cplusplus-program-to-print-values-in-a-specified-format
+            const void *const ptr = stack[sp-inst.operand.as_int()-1].as_ptr();
+            std::cout << std::hex << std::showbase << (long long) ptr << std::endl;
             break;
+        }
 
         case Nan_Type::EXCEPTION:
         default:
