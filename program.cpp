@@ -20,7 +20,7 @@ void Program::write_to_file(const char *path, const Inst *program, const size_t 
         exit(1);
     }
 
-    file.write((const char *)program, sizeof(Inst) * program_size);
+    file.write((const char *)program, static_cast<std::streamsize>(sizeof(Inst) * program_size));
     file.close();
 }
 

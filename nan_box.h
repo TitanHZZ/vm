@@ -14,7 +14,7 @@ class Nan_Box {
 public:
     Nan_Box() {}
     Nan_Box(const double db_value)   : m_value(db_value) {}
-    Nan_Box(const int64_t int_value) : m_value(box_int(int_value)) {}
+    Nan_Box(const int64_t int_value) : m_value(box_int( static_cast<uint64_t>(int_value))) {}
     Nan_Box(const void *ptr_value)   : m_value(box_ptr(ptr_value)) {}
 
     // 'type' related functions

@@ -44,7 +44,7 @@ public:
 
     // basic program serialization
     friend std::ofstream& operator<<(std::ofstream& ofs, const Program& program) {
-        ofs.write((const char *)program.insts.data(), sizeof(Inst) * program.insts.size());
+        ofs.write((const char *)program.insts.data(), static_cast<std::streamsize>(sizeof(Inst) * program.insts.size()));
         return ofs;
     }
 
@@ -59,12 +59,12 @@ public:
         }
         ifs.seekg(0, std::ios::beg);
 
-        if (file_size % sizeof(Inst) != 0) {
+        if (static_cast<unsigned long>(file_size) % sizeof(Inst) != 0) {
             std::cerr << "ERROR: Invalid file size. File is currupted." << std::endl;
             exit(1);
         }
 
-        const size_t inst_count = file_size / sizeof(Inst);
+        const size_t inst_count = static_cast<unsigned long>(file_size) / sizeof(Inst);
         program.insts.reserve((size_t)inst_count); // reserve the size necessary to store all the instructions
         for (size_t i = 0; i < inst_count; i++) {
             Inst new_inst;

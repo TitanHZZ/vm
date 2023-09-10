@@ -138,13 +138,13 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         if (sp >= STACK_CAP)
             return Exception_Type::EXCEPTION_STACK_OVERFLOW;
 
-        if (sp-inst.operand.as_int() <= 0)
+        if (sp-static_cast<size_t>(inst.operand.as_int()) <= 0)
             return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
 
-        if (sp-inst.operand.as_int() > sp)
+        if (sp-static_cast<size_t>(inst.operand.as_int()) > sp)
             return Exception_Type::EXCEPTION_STACK_OVERFLOW;
 
-        stack[sp] = stack[sp-inst.operand.as_int()-1];
+        stack[sp] = stack[sp-static_cast<size_t>(inst.operand.as_int())-1];
         sp++;
         break;
 
@@ -163,13 +163,13 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         if (sp >= STACK_CAP)
             return Exception_Type::EXCEPTION_STACK_OVERFLOW;
 
-        if (sp-inst.operand.as_int() <= 0)
+        if (sp-static_cast<size_t>(inst.operand.as_int()) <= 0)
             return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
 
-        if (sp-inst.operand.as_int() > sp)
+        if (sp-static_cast<size_t>(inst.operand.as_int()) > sp)
             return Exception_Type::EXCEPTION_STACK_OVERFLOW;
 
-        std::swap(stack[sp-1], stack[sp-inst.operand.as_int()-1]);
+        std::swap(stack[sp-1], stack[sp-static_cast<size_t>(inst.operand.as_int())-1]);
         break;
 
     case Inst_Type::INST_CALL:
@@ -208,24 +208,24 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         if (sp < 1)
             return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
 
-        if (sp-inst.operand.as_int() <= 0)
+        if (sp-static_cast<size_t>(inst.operand.as_int()) <= 0)
             return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
 
-        if (sp-inst.operand.as_int() > sp)
+        if (sp-static_cast<size_t>(inst.operand.as_int()) > sp)
             return Exception_Type::EXCEPTION_STACK_OVERFLOW;
 
-        switch (stack[sp-inst.operand.as_int()-1].get_type()) {
+        switch (stack[sp-static_cast<size_t>(inst.operand.as_int())-1].get_type()) {
         case Nan_Type::DOUBLE:
-            std::cout << stack[sp-inst.operand.as_int()-1].as_double() << std::endl;
+            std::cout << stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_double() << std::endl;
             break;
 
         case Nan_Type::INT:
-            std::cout << stack[sp-inst.operand.as_int()-1].as_int() << std::endl;
+            std::cout << stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_int() << std::endl;
             break;
 
         case Nan_Type::PTR: {
             // taken from: https://www.tutorialspoint.com/cplusplus-program-to-print-values-in-a-specified-format
-            const void *const ptr = stack[sp-inst.operand.as_int()-1].as_ptr();
+            const void *const ptr = stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_ptr();
             std::cout << std::hex << std::showbase << (long long) ptr << std::endl;
             break;
         }
@@ -301,12 +301,12 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
             return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
 
         // get a byte from a double in the static memory (not shure if this will ever be used)
-        if (memory[stack[sp-1].as_int()].get_type() == Nan_Type::DOUBLE) {
-            double value = memory[stack[sp-1].as_int()].as_double();
+        if (memory[static_cast<size_t>(stack[sp-1].as_int())].get_type() == Nan_Type::DOUBLE) {
+            double value = memory[static_cast<size_t>(stack[sp-1].as_int())].as_double();
             const uint64_t *const new_value = (uint64_t*)(&value);
             stack[sp-1] = (int64_t)(int8_t)(*new_value);
         } else {
-            stack[sp-1] = (int64_t)(int8_t)memory[stack[sp-1].as_int()].as_int();
+            stack[sp-1] = (int64_t)(int8_t)memory[static_cast<size_t>(stack[sp-1].as_int())].as_int();
         }
         break;
 
@@ -327,12 +327,12 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
             return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
 
         // get 2 bytes from a double in the static memory (not shure if this will ever be used)
-        if (memory[stack[sp-1].as_int()].get_type() == Nan_Type::DOUBLE) {
-            double value = memory[stack[sp-1].as_int()].as_double();
+        if (memory[static_cast<size_t>(stack[sp-1].as_int())].get_type() == Nan_Type::DOUBLE) {
+            double value = memory[static_cast<size_t>(stack[sp-1].as_int())].as_double();
             const uint64_t *const new_value = (uint64_t*)(&value);
             stack[sp-1] = (int64_t)(int16_t)(*new_value);
         } else {
-            stack[sp-1] = (int64_t)(int16_t)memory[stack[sp-1].as_int()].as_int();
+            stack[sp-1] = (int64_t)(int16_t)memory[static_cast<size_t>(stack[sp-1].as_int())].as_int();
         }
         break;
 
@@ -353,12 +353,12 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
             return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
 
         // get 4 bytes from a double in the static memory (not shure if this will ever be used)
-        if (memory[stack[sp-1].as_int()].get_type() == Nan_Type::DOUBLE) {
-            double value = memory[stack[sp-1].as_int()].as_double();
+        if (memory[static_cast<size_t>(stack[sp-1].as_int())].get_type() == Nan_Type::DOUBLE) {
+            double value = memory[static_cast<size_t>(stack[sp-1].as_int())].as_double();
             const uint64_t *const new_value = (uint64_t*)(&value);
             stack[sp-1] = (int64_t)(int32_t)(*new_value);
         } else {
-            stack[sp-1] = (int64_t)(int32_t)memory[stack[sp-1].as_int()].as_int();
+            stack[sp-1] = (int64_t)(int32_t)memory[static_cast<size_t>(stack[sp-1].as_int())].as_int();
         }
         break;
 
@@ -379,7 +379,7 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
             return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
 
         // just copy the value
-        stack[sp-1] = memory[stack[sp-1].as_int()];
+        stack[sp-1] = memory[static_cast<size_t>(stack[sp-1].as_int())];
         break;
 
     case INST_WRITE8:
@@ -402,9 +402,9 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         if (stack[sp-1].get_type() == Nan_Type::DOUBLE) {
             const double value = stack[sp-1].as_double();
             const uint64_t *const new_value = (uint64_t*)(&value);
-            memory[stack[sp-2].as_int()] = (int64_t)(int8_t)(*new_value);
+            memory[static_cast<size_t>(stack[sp-2].as_int())] = (int64_t)(int8_t)(*new_value);
         } else {
-            memory[stack[sp-2].as_int()] = (int64_t)(int8_t)stack[sp-1].as_int();
+            memory[static_cast<size_t>(stack[sp-2].as_int())] = (int64_t)(int8_t)stack[sp-1].as_int();
         }
         sp -= 2;
         break;
@@ -429,9 +429,9 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         if (stack[sp-1].get_type() == Nan_Type::DOUBLE) {
             const double value = stack[sp-1].as_double();
             const uint64_t *const new_value = (uint64_t*)(&value);
-            memory[stack[sp-2].as_int()] = (int64_t)(int16_t)(*new_value);
+            memory[static_cast<size_t>(stack[sp-2].as_int())] = (int64_t)(int16_t)(*new_value);
         } else {
-            memory[stack[sp-2].as_int()] = (int64_t)(int16_t)stack[sp-1].as_int();
+            memory[static_cast<size_t>(stack[sp-2].as_int())] = (int64_t)(int16_t)stack[sp-1].as_int();
         }
         sp -= 2;
         break;
@@ -456,9 +456,9 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         if (stack[sp-1].get_type() == Nan_Type::DOUBLE) {
             const double value = stack[sp-1].as_double();
             const uint64_t *const new_value = (uint64_t*)(&value);
-            memory[stack[sp-2].as_int()] = (int64_t)(int32_t)(*new_value);
+            memory[static_cast<size_t>(stack[sp-2].as_int())] = (int64_t)(int32_t)(*new_value);
         } else {
-            memory[stack[sp-2].as_int()] = (int64_t)(int32_t)stack[sp-1].as_int();
+            memory[static_cast<size_t>(stack[sp-2].as_int())] = (int64_t)(int32_t)stack[sp-1].as_int();
         }
         sp -= 2;
         break;
@@ -480,7 +480,7 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
             return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
 
         // just copy the value
-        memory[stack[sp-2].as_int()] = stack[sp-1];
+        memory[static_cast<size_t>(stack[sp-2].as_int())] = stack[sp-1];
         sp -= 2;
         break;
 
@@ -560,7 +560,7 @@ void Vm::dump_memory() {
 
 void Vm::native_malloc() {
     // get the size of the memory to allocate
-    const size_t size = stack[sp-1].as_int();
+    const size_t size = static_cast<size_t>(stack[sp-1].as_int());
 
     // allocate the memory
     const void *const ptr = malloc(size);

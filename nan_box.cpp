@@ -5,8 +5,8 @@
 
 #include "nan_box.h"
 
-#define TYPE_MASK (((1LL << 3LL) - 1LL) << 48LL)
-#define VALUE_MASK ((1LL << 48LL) - 1LL)
+#define TYPE_MASK (((1ULL << 3ULL) - 1ULL) << 48ULL)
+#define VALUE_MASK ((1ULL << 48ULL) - 1ULL)
 
 /*void Nan_Box::print_bits_representation(uint8_t *const ptr, const size_t size) {
     for (const uint8_t* ptr_end = ptr + size - 1; ptr_end >= ptr; ptr_end--) {
@@ -23,23 +23,23 @@ Nan_Type Nan_Box::get_type() const {
         return Nan_Type::DOUBLE;
 
     const uint64_t *const value_ptr = (uint64_t*)(&m_value);
-    return (Nan_Type) ((*value_ptr & TYPE_MASK) >> 48LL);
+    return (Nan_Type) ((*value_ptr & TYPE_MASK) >> 48ULL);
 }
 
 void Nan_Box::set_type(const Nan_Type type) {
     m_value = std::numeric_limits<double>::quiet_NaN(); // make a nan
     uint64_t *const value_ptr = (uint64_t*)(&this->m_value);
-    *value_ptr = (*value_ptr & ~TYPE_MASK) | ((uint64_t)type << 48LL);
+    *value_ptr = (*value_ptr & ~TYPE_MASK) | ((uint64_t)type << 48ULL);
 }
 
 uint64_t Nan_Box::get_value() const {
     const uint64_t *const value_ptr = (uint64_t*)(&m_value);
     uint64_t new_value = *value_ptr & VALUE_MASK;
 
-    // new_value |= (0xFFFF000000000000 * (new_value >> 47LL) * (this->get_type() == Nan_Type::INT));
+    // new_value |= (0xFFFF000000000000 * (new_value >> 47ULL) * (this->get_type() == Nan_Type::INT));
     if (this->get_type() == Nan_Type::INT) {
         // sign extend the value
-        const uint64_t sign_bit = new_value >> 47LL;
+        const uint64_t sign_bit = new_value >> 47ULL;
         if (sign_bit == 1) {
             new_value |= 0xFFFF000000000000;
         }
@@ -76,7 +76,7 @@ Nan_Box& Nan_Box::operator+=(Nan_Box& rhs) {
             this->box_double(static_cast<double>(this->as_int()) + rhs.as_double()); 
         } else if (rhs_type == Nan_Type::INT) {
             // sum of two ints
-            this->box_int(this->as_int() + rhs.as_int());
+            this->box_int(static_cast<uint64_t>(this->as_int() + rhs.as_int()));
         } else if (rhs_type == Nan_Type::PTR) {
             // increment pointer as if it was a 'char *'
             this->box_ptr(this->as_int() + static_cast<char*>(rhs.as_ptr()));
@@ -118,7 +118,7 @@ Nan_Box& Nan_Box::operator-=(Nan_Box& rhs) {
             this->box_double(static_cast<double>(this->as_int()) - rhs.as_double());
         } else if (rhs_type == Nan_Type::INT) {
             // subtract two ints
-            this->box_int(this->as_int() - rhs.as_int());
+            this->box_int(static_cast<uint64_t>(this->as_int() - rhs.as_int()));
         } else if (rhs_type == Nan_Type::PTR) {
             // return an exception (cannot subtract a pointer and a int)
             this->box_exception(Exception_Type::EXCEPTION_SUBTRACT_POINTER_AND_INT);
@@ -160,7 +160,7 @@ Nan_Box& Nan_Box::operator*=(Nan_Box& rhs) {
             this->box_double(static_cast<double>(this->as_int()) * rhs.as_double()); 
         } else if (rhs_type == Nan_Type::INT) {
             // multiply two ints
-            this->box_int(this->as_int() * rhs.as_int());
+            this->box_int(static_cast<uint64_t>(this->as_int() * rhs.as_int()));
         } else if (rhs_type == Nan_Type::PTR) {
             // return an exception (cannot multiply a pointer and an int)
             this->box_exception(Exception_Type::EXCEPTION_MUL_POINTER);
@@ -210,7 +210,7 @@ Nan_Box& Nan_Box::operator/=(Nan_Box& rhs) {
                 this->box_exception(Exception_Type::EXCEPTION_DIV_BY_ZERO);
             } else {
                 if (this->as_int() % rhs.as_int() == 0) {
-                    this->box_int(this->as_int() / rhs.as_int());
+                    this->box_int(static_cast<uint64_t>(this->as_int() / rhs.as_int()));
                 } else {
                     this->box_double((double)this->as_int() / (double)rhs.as_int());
                 }
@@ -234,7 +234,7 @@ Nan_Box& Nan_Box::operator<<=(Nan_Box& rhs) {
     if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
         this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
     } else {
-        this->box_int(this->as_int() << rhs.as_int());
+        this->box_int(static_cast<uint64_t>(this->as_int() << rhs.as_int()));
     }
 
     return *this;
@@ -247,7 +247,7 @@ Nan_Box& Nan_Box::operator>>=(Nan_Box& rhs) {
     if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
         this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
     } else {
-        this->box_int(this->as_int() >> rhs.as_int());
+        this->box_int(static_cast<uint64_t>(this->as_int() >> rhs.as_int()));
     }
 
     return *this;
@@ -260,7 +260,7 @@ Nan_Box& Nan_Box::operator&=(Nan_Box& rhs) {
     if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
         this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
     } else {
-        this->box_int(this->as_int() & rhs.as_int());
+        this->box_int(static_cast<uint64_t>(this->as_int() & rhs.as_int()));
     }
 
     return *this;
@@ -273,7 +273,7 @@ Nan_Box& Nan_Box::operator|=(Nan_Box& rhs) {
     if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
         this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
     } else {
-        this->box_int(this->as_int() | rhs.as_int());
+        this->box_int(static_cast<uint64_t>(this->as_int() | rhs.as_int()));
     }
 
     return *this;
@@ -286,7 +286,7 @@ Nan_Box& Nan_Box::operator^=(Nan_Box& rhs) {
     if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
         this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
     } else {
-        this->box_int(this->as_int() ^ rhs.as_int());
+        this->box_int(static_cast<uint64_t>(this->as_int() ^ rhs.as_int()));
     }
 
     return *this;
@@ -298,7 +298,7 @@ Nan_Box& Nan_Box::operator~() {
     if (type != Nan_Type::INT) {
         this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
     } else {
-        this->box_int(~this->as_int());
+        this->box_int(static_cast<uint64_t>(~this->as_int()));
     }
 
     return *this;
