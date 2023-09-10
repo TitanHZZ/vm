@@ -1,0 +1,30 @@
+# simple program to test the usage of memory
+%define N 258 # iterations (should overflow 8-bit memory)
+
+main:
+    push 0 # i
+
+loop:
+    # check if i == N
+    dup 0
+    push N
+    equ
+    jif end
+
+    # write the value of i to memory
+    dup 0
+    dup 0
+    write8
+
+    # read the value stored in the memory
+    dup 0
+    read8
+    print 0
+    pop
+
+    push 1
+    add
+    jmp loop
+
+end:
+    exit

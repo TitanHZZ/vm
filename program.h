@@ -15,12 +15,18 @@ typedef struct {
     std::string file_name;
 } Label;
 
+typedef struct {
+    size_t insts_idx;
+    std::string label_name;
+} Unresolved_Label;
+
 class Program {
 private:
     void string_trim(std::string& str);
     void string_split_by_delimeter(std::string& line, const char ch, const bool get_first_substring);
-    void get_label_definitions(std::ifstream& file, const char *path, std::unordered_map<std::string, Label>& labels);
+    void get_label_definition(std::string& line, const char *const path, std::unordered_map<std::string, Label>& labels, const size_t line_count);
     void parse_source_code(const char *path, std::unordered_map<std::string, Label>& labels, std::unordered_map<std::string, std::string>& preprocessor_defines);
+    void get_preprocessor_directive(std::string& line, const char *const path, std::unordered_map<std::string, Label>& labels, std::unordered_map<std::string, std::string>& preprocessor_defines, const size_t line_count);
 
 public:
     std::vector<Inst> insts;

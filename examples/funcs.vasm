@@ -2,33 +2,12 @@
 # calculate an aproximation of sin(x)
 # https://en.wikipedia.org/wiki/Bh%C4%81skara_I%27s_sine_approximation_formula
 
-# degrees
-%define N 13
-
     # make 'main' be the entry point
     jmp main
 
-# function that calculates an aproximation of sin(x)
-sin:
-    swap 1 # swap ret addr with parameter
-    dup 0
-    dup 0
-    push 180
-    swap 1
-    sub
-    swap 1
-    push 4
-    mul
-    dup 1
-    mul
-    swap 2
-    mul
-    push 40500
-    swap 1
-    sub
-    div
-    swap 1 # swap ret addr with result
-    ret # return from function
+# '%include' directive file path does not need quotes (but can have them)
+%include ../examples/sin.vasm # labels are global (cannot be repeated in different files)
+%define N 13 # degrees
 
 main:
     push N

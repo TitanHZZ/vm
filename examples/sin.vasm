@@ -1,0 +1,26 @@
+# simple program to test the usage of funcs and '%include' preprocessor directive
+
+    # avoid problems with the automatic tests
+    exit
+
+# function that calculates an aproximation of sin(x)
+sin:
+    swap 1 # swap ret addr with parameter
+    dup 0
+    dup 0
+    push 180
+    swap 1
+    sub
+    swap 1
+    push 4
+    mul
+    dup 1
+    mul
+    swap 2
+    mul
+    push 40500
+    swap 1
+    sub
+    div
+    swap 1 # swap ret addr with result
+    ret # return from function

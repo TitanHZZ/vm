@@ -34,7 +34,18 @@ void Nan_Box::set_type(const Nan_Type type) {
 
 uint64_t Nan_Box::get_value() const {
     const uint64_t *const value_ptr = (uint64_t*)(&m_value);
-    return *value_ptr & VALUE_MASK;
+    uint64_t new_value = *value_ptr & VALUE_MASK;
+
+    // new_value |= (0xFFFF000000000000 * (new_value >> 47LL) * (this->get_type() == Nan_Type::INT));
+    if (this->get_type() == Nan_Type::INT) {
+        // sign extend the value
+        const uint64_t sign_bit = new_value >> 47LL;
+        if (sign_bit == 1) {
+            new_value |= 0xFFFF000000000000;
+        }
+    }
+
+    return new_value;
 }
 
 void Nan_Box::set_value(const uint64_t value) {
@@ -54,7 +65,7 @@ Nan_Box& Nan_Box::operator+=(Nan_Box& rhs) {
             m_value += rhs.as_double();
         } else if (rhs_type == Nan_Type::INT) {
             // sum of a double and an int
-            this->m_value += rhs.as_int();
+            this->m_value += static_cast<double>(rhs.as_int());
         } else if (rhs_type == Nan_Type::PTR) {
             // return an exception (cannot add a pointer and a double)
             this->box_exception(Exception_Type::EXCEPTION_ADD_POINTER_AND_DOUBLE);
@@ -62,7 +73,7 @@ Nan_Box& Nan_Box::operator+=(Nan_Box& rhs) {
     } else if (type == Nan_Type::INT) {
         if (rhs_type == Nan_Type::DOUBLE) {
             // sum of an int and a double
-            this->box_double(this->as_int() + rhs.as_double()); 
+            this->box_double(static_cast<double>(this->as_int()) + rhs.as_double()); 
         } else if (rhs_type == Nan_Type::INT) {
             // sum of two ints
             this->box_int(this->as_int() + rhs.as_int());
@@ -96,7 +107,7 @@ Nan_Box& Nan_Box::operator-=(Nan_Box& rhs) {
             m_value -= rhs.as_double();
         } else if (rhs_type == Nan_Type::INT) {
             // subtract an int from a double
-            this->m_value -= rhs.as_int();
+            this->m_value -= static_cast<double>(rhs.as_int());
         } else if (rhs_type == Nan_Type::PTR) {
             // return an exception (cannot subtract a pointer and a double)
             this->box_exception(Exception_Type::EXCEPTION_SUBTRACT_POINTER_AND_DOUBLE);
@@ -104,7 +115,7 @@ Nan_Box& Nan_Box::operator-=(Nan_Box& rhs) {
     } else if (type == Nan_Type::INT) {
         if (rhs_type == Nan_Type::DOUBLE) {
             // subtract a double from an int
-            this->box_double(this->as_int() - rhs.as_double());
+            this->box_double(static_cast<double>(this->as_int()) - rhs.as_double());
         } else if (rhs_type == Nan_Type::INT) {
             // subtract two ints
             this->box_int(this->as_int() - rhs.as_int());
@@ -138,7 +149,7 @@ Nan_Box& Nan_Box::operator*=(Nan_Box& rhs) {
             m_value *= rhs.as_double();
         } else if (rhs_type == Nan_Type::INT) {
             // multiply a double and an int
-            this->m_value *= rhs.as_int();
+            this->m_value *= static_cast<double>(rhs.as_int());
         } else if (rhs_type == Nan_Type::PTR) {
             // return an exception (cannot multiply a pointer and a double)
             this->box_exception(Exception_Type::EXCEPTION_MUL_POINTER);
@@ -146,7 +157,7 @@ Nan_Box& Nan_Box::operator*=(Nan_Box& rhs) {
     } else if (type == Nan_Type::INT) {
         if (rhs_type == Nan_Type::DOUBLE) {
             // multiply an int and a double
-            this->box_double(this->as_int() * rhs.as_double()); 
+            this->box_double(static_cast<double>(this->as_int()) * rhs.as_double()); 
         } else if (rhs_type == Nan_Type::INT) {
             // multiply two ints
             this->box_int(this->as_int() * rhs.as_int());
@@ -179,7 +190,7 @@ Nan_Box& Nan_Box::operator/=(Nan_Box& rhs) {
                 // return an exception (cannot divide by 0)
                 this->box_exception(Exception_Type::EXCEPTION_DIV_BY_ZERO);
             } else {
-                this->m_value /= rhs.as_int();
+                this->m_value /= static_cast<double>(rhs.as_int());
             }
         } else if (rhs_type == Nan_Type::PTR) {
             // return an exception (cannot divide a double by a pointer)
@@ -191,7 +202,7 @@ Nan_Box& Nan_Box::operator/=(Nan_Box& rhs) {
                 // return an exception (cannot divide by 0)
                 this->box_exception(Exception_Type::EXCEPTION_DIV_BY_ZERO);
             } else {
-                this->box_double(this->as_int() / rhs.as_double()); 
+                this->box_double(static_cast<double>(this->as_int()) / rhs.as_double()); 
             }
         } else if (rhs_type == Nan_Type::INT) {
             if (rhs.as_int() == 0) {

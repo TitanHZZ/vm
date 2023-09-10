@@ -66,6 +66,14 @@ void exception_handler(Exception_Type exception) {
         std::cerr << "'EXCEPTION_BITWISE_NON_INT'" << std::endl;
         exit(1);
 
+    case EXCEPTION_INVALID_MEM_ADDR:
+        std::cerr << "'EXCEPTION_INVALID_MEM_ADDR'" << std::endl;
+        exit(1);
+
+    case EXCEPTION_INVALID_READ_WRITE:
+        std::cerr << "'EXCEPTION_INVALID_READ_WRITE'" << std::endl;
+        exit(1);
+
     default:
         std::cerr << "when handling another exception: 'EXCEPTION_UNKNOWN'" << std::endl;
         exit(1);

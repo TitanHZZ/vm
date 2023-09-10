@@ -2,7 +2,12 @@
 
 #include "vm.h"
 
-Vm::Vm() {}
+Vm::Vm() {
+    memory.reserve(DEFAULT_STATIC_MEM_CAP);
+    for (size_t i = 0; i < DEFAULT_STATIC_MEM_CAP; i++)
+        memory.push_back(Nan_Box(static_cast<int64_t>(0)));
+}
+
 Vm::~Vm(){}
 
 void Vm::execute_program(Inst program[], const size_t program_size) {
@@ -119,7 +124,7 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         break;
 
     case Inst_Type::INST_JMP_IF:
-        if (stack[sp-1] == Nan_Box(1)) {
+        if (stack[sp-1] == Nan_Box(static_cast<int64_t>(1))) {
             ip = (uint64_t)inst.operand.as_ptr();
             return Exception_Type::EXCEPTION_OK;
         }
@@ -143,8 +148,12 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         sp++;
         break;
 
-    case Inst_Type::INST_DUMP:
+    case Inst_Type::INST_DUMP_STACK:
         this->dump_stack();
+        break;
+
+    case Inst_Type::INST_DUMP_MEMORY:
+        this->dump_memory();
         break;
 
     case Inst_Type::INST_SWAP:
@@ -275,6 +284,206 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         stack[sp-1] = ~stack[sp-1];
         break;
 
+    case INST_READ8:
+        if (sp < 1)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        // check ptr type
+        if (stack[sp-1].get_type() != Nan_Type::PTR && stack[sp-1].get_type() != Nan_Type::INT)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check 'ptr' value
+        if (stack[sp-1].get_type() == Nan_Type::INT && stack[sp-1].as_int() < 0)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check ptr value
+        if ((uint64_t)stack[sp-1].as_ptr() >= memory.size())
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // get a byte from a double in the static memory (not shure if this will ever be used)
+        if (memory[stack[sp-1].as_int()].get_type() == Nan_Type::DOUBLE) {
+            double value = memory[stack[sp-1].as_int()].as_double();
+            const uint64_t *const new_value = (uint64_t*)(&value);
+            stack[sp-1] = (int64_t)(int8_t)(*new_value);
+        } else {
+            stack[sp-1] = (int64_t)(int8_t)memory[stack[sp-1].as_int()].as_int();
+        }
+        break;
+
+    case INST_READ16:
+        if (sp < 1)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        // check ptr type
+        if (stack[sp-1].get_type() != Nan_Type::PTR && stack[sp-1].get_type() != Nan_Type::INT)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check 'ptr' value
+        if (stack[sp-1].get_type() == Nan_Type::INT && stack[sp-1].as_int() < 0)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check ptr value
+        if ((uint64_t)stack[sp-1].as_ptr() >= memory.size())
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // get 2 bytes from a double in the static memory (not shure if this will ever be used)
+        if (memory[stack[sp-1].as_int()].get_type() == Nan_Type::DOUBLE) {
+            double value = memory[stack[sp-1].as_int()].as_double();
+            const uint64_t *const new_value = (uint64_t*)(&value);
+            stack[sp-1] = (int64_t)(int16_t)(*new_value);
+        } else {
+            stack[sp-1] = (int64_t)(int16_t)memory[stack[sp-1].as_int()].as_int();
+        }
+        break;
+
+    case INST_READ32:
+        if (sp < 1)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        // check ptr type
+        if (stack[sp-1].get_type() != Nan_Type::PTR && stack[sp-1].get_type() != Nan_Type::INT)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check 'ptr' value
+        if (stack[sp-1].get_type() == Nan_Type::INT && stack[sp-1].as_int() < 0)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check ptr value
+        if ((uint64_t)stack[sp-1].as_ptr() >= memory.size())
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // get 4 bytes from a double in the static memory (not shure if this will ever be used)
+        if (memory[stack[sp-1].as_int()].get_type() == Nan_Type::DOUBLE) {
+            double value = memory[stack[sp-1].as_int()].as_double();
+            const uint64_t *const new_value = (uint64_t*)(&value);
+            stack[sp-1] = (int64_t)(int32_t)(*new_value);
+        } else {
+            stack[sp-1] = (int64_t)(int32_t)memory[stack[sp-1].as_int()].as_int();
+        }
+        break;
+
+    case INST_READ64:
+        if (sp < 1)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        // check ptr type
+        if (stack[sp-1].get_type() != Nan_Type::PTR && stack[sp-1].get_type() != Nan_Type::INT)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check 'ptr' value
+        if (stack[sp-1].get_type() == Nan_Type::INT && stack[sp-1].as_int() < 0)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check ptr value
+        if ((uint64_t)stack[sp-1].as_ptr() >= memory.size())
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // just copy the value
+        stack[sp-1] = memory[stack[sp-1].as_int()];
+        break;
+
+    case INST_WRITE8:
+        if (sp < 2)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        // check ptr type
+        if (stack[sp-2].get_type() != Nan_Type::PTR && stack[sp-2].get_type() != Nan_Type::INT)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check 'ptr' value
+        if (stack[sp-2].get_type() == Nan_Type::INT && stack[sp-2].as_int() < 0)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check ptr value
+        if ((uint64_t)stack[sp-2].as_ptr() >= memory.size())
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // get a byte from a double in the stack (not shure if this will ever be used)
+        if (stack[sp-1].get_type() == Nan_Type::DOUBLE) {
+            const double value = stack[sp-1].as_double();
+            const uint64_t *const new_value = (uint64_t*)(&value);
+            memory[stack[sp-2].as_int()] = (int64_t)(int8_t)(*new_value);
+        } else {
+            memory[stack[sp-2].as_int()] = (int64_t)(int8_t)stack[sp-1].as_int();
+        }
+        sp -= 2;
+        break;
+
+    case INST_WRITE16:
+        if (sp < 2)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        // check ptr type
+        if (stack[sp-2].get_type() != Nan_Type::PTR && stack[sp-2].get_type() != Nan_Type::INT)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check 'ptr' value
+        if (stack[sp-2].get_type() == Nan_Type::INT && stack[sp-2].as_int() < 0)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check ptr value
+        if ((uint64_t)stack[sp-2].as_ptr() >= memory.size())
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // get 2 bytes from a double in the stack (not shure if this will ever be used)
+        if (stack[sp-1].get_type() == Nan_Type::DOUBLE) {
+            const double value = stack[sp-1].as_double();
+            const uint64_t *const new_value = (uint64_t*)(&value);
+            memory[stack[sp-2].as_int()] = (int64_t)(int16_t)(*new_value);
+        } else {
+            memory[stack[sp-2].as_int()] = (int64_t)(int16_t)stack[sp-1].as_int();
+        }
+        sp -= 2;
+        break;
+
+    case INST_WRITE32:
+        if (sp < 2)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        // check ptr type
+        if (stack[sp-2].get_type() != Nan_Type::PTR && stack[sp-2].get_type() != Nan_Type::INT)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check 'ptr' value
+        if (stack[sp-2].get_type() == Nan_Type::INT && stack[sp-2].as_int() < 0)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check ptr value
+        if ((uint64_t)stack[sp-2].as_ptr() >= memory.size())
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // get 4 bytes from a double in the stack (not shure if this will ever be used)
+        if (stack[sp-1].get_type() == Nan_Type::DOUBLE) {
+            const double value = stack[sp-1].as_double();
+            const uint64_t *const new_value = (uint64_t*)(&value);
+            memory[stack[sp-2].as_int()] = (int64_t)(int32_t)(*new_value);
+        } else {
+            memory[stack[sp-2].as_int()] = (int64_t)(int32_t)stack[sp-1].as_int();
+        }
+        sp -= 2;
+        break;
+
+    case INST_WRITE64:
+        if (sp < 2)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        // check ptr type
+        if (stack[sp-2].get_type() != Nan_Type::PTR && stack[sp-2].get_type() != Nan_Type::INT)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check 'ptr' value
+        if (stack[sp-2].get_type() == Nan_Type::INT && stack[sp-2].as_int() < 0)
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // check ptr value
+        if ((uint64_t)stack[sp-2].as_ptr() >= memory.size())
+            return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
+
+        // just copy the value
+        memory[stack[sp-2].as_int()] = stack[sp-1];
+        sp -= 2;
+        break;
+
     case Inst_Type::INST_COUNT:
     default:
         return Exception_Type::EXCEPTION_UNKNOWN_INSTRUCTION;
@@ -315,6 +524,34 @@ void Vm::dump_stack() {
     }
 
     if (sp == 0)
+        std::cout << "    [Empty]" << std::endl;
+}
+
+void Vm::dump_memory() {
+    // print the memory
+    std::cout << "Vm Memory (" << memory.size() << " element" << (memory.size() != 1 ? "s" : "") << "):" << std::endl;
+    for (size_t i = 0; i < memory.size(); i++) {
+        switch (memory[i].get_type()) {
+        case Nan_Type::DOUBLE:
+            std::cout << "    # Double: " << memory[i].as_double() << std::endl;
+            break;
+
+        case Nan_Type::INT:
+            std::cout << "    # Int: " << memory[i].as_int() << std::endl;
+            break;
+
+        case Nan_Type::PTR:
+            std::cout << "    # Ptr: " << memory[i].as_ptr() << std::endl;
+            break;
+
+        case Nan_Type::EXCEPTION:
+        default:
+            std::cerr << "ERROR: Unknown variable data type in the memory." << std::endl;
+            exit(1);
+        }
+    }
+
+    if (memory.size() == 0)
         std::cout << "    [Empty]" << std::endl;
 }
 
