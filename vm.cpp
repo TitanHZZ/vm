@@ -602,9 +602,10 @@ void Vm::native_fwrite() {
         break;
 
     default:
-        break;
+        std::cerr << "ERROR: Invalid file descriptor." << std::endl;
+        exit(1);
     }
 
     // make the native function call
-    fwrite(buf, 1, str_size, stdout);
+    fwrite(buf, 1, str_size, file_ptr);
 }
