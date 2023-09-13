@@ -141,8 +141,121 @@ void Program::get_preprocessor_directive(std::string& line, const char *const pa
         std::replace(directive_path.begin(), directive_path.end(), '"', ' ');
         string_trim(directive_path);
 
-        // parse the file
+        // parse the file recursively
         this->parse_source_code(directive_path.c_str(), labels, preprocessor_defines);
+    } else if (directive_operation == "res") {
+        // this directive is used to reserve memory (static memory)
+        const size_t directive_last_space_idx = line.find_last_of(' ');
+        std::string directive_name = line.substr(directive_first_space_idx + 1, directive_last_space_idx - directive_first_space_idx - 1);
+        string_trim(directive_name);
+        const std::string directive_value = line.substr(directive_last_space_idx + 1, line.size() - directive_last_space_idx - 1);
+
+        // check if the preprocessor 'res' name is already defined
+        if (preprocessor_defines.contains(directive_name)) {
+            std::cerr << "ERROR: Duplicate preprocessor res '" << directive_name << "'." << std::endl;
+            std::cerr << "      " << path << ":" << line_count << std::endl;
+            exit(1);
+        }
+
+        char *end_ptr = nullptr;
+        const int64_t value = static_cast<int64_t>(std::strtoll(directive_value.c_str(), &end_ptr, 10));
+        if ((size_t)(end_ptr - directive_value.c_str()) != directive_value.size()) {
+            std::cerr << "ERROR: Invalid preprocessor directive operand '" << directive_value << "'." << std::endl;
+            std::cerr << "      " << path << ":" << line_count << std::endl;
+            exit(1);
+        }
+
+        if (value < 0) {
+            std::cerr << "ERROR: Invalid preprocessor directive operand '" << directive_value << "'." << std::endl;
+            std::cerr << "      Cannot reserve a negative amount of memory." << std::endl;
+            std::cerr << "      " << path << ":" << line_count << std::endl;
+            exit(1);
+        }
+
+        // add a new define to the map (with the addr of the requested memory block)
+        preprocessor_defines.emplace(std::move(directive_name), std::to_string(memory.size()));
+
+        // reserve the requested memory amount (initialized with 0)
+        for (int64_t i = 0; i < value; i++) {
+            memory.push_back(Nan_Box(static_cast<int64_t>(0)));
+        }
+    } else if (directive_operation == "string") {
+        // this directive is used to reserve memory (static memory) and initialize it with a string
+        std::string directive_name_values = line.substr(directive_first_space_idx + 1, line.size() - directive_first_space_idx - 1);
+        string_trim(directive_name_values);
+
+        const size_t directive_space_idx = directive_name_values.find_first_of(' ');
+        std::string directive_name = directive_name_values.substr(0, directive_space_idx);
+        // directive values should be a comma separated list of strings/bytes
+        std::string directive_values = directive_name_values.substr(directive_space_idx + 1, directive_name_values.size() - directive_space_idx);
+
+        // check if the preprocessor 'res' name is already defined
+        if (preprocessor_defines.contains(directive_name)) {
+            std::cerr << "ERROR: Duplicate preprocessor res '" << directive_name << "'." << std::endl;
+            std::cerr << "      " << path << ":" << line_count << std::endl;
+            exit(1);
+        }
+
+        // get all the values to fill in the string in the static memory
+        std::vector<int8_t> values;
+        size_t comma_idx = directive_values.find_first_of(',');
+        bool last_item = comma_idx == std::string::npos;
+        while (comma_idx != std::string::npos || last_item) {
+            // get new directive value and add it to the vector
+            std::string new_value = directive_values.substr(0, comma_idx);
+            string_trim(new_value);
+
+            // check if the value is a string literal or a byte
+            if (new_value.find_first_of('"') != std::string::npos) {
+                if (!new_value.starts_with('"') || !new_value.ends_with('"')) {
+                    std::cerr << "ERROR: Preprocessor directive value has unmatched '\"'." << std::endl;
+                    std::cerr << "      " << path << ":" << line_count << std::endl;
+                    exit(1);
+                }
+
+                std::replace(new_value.begin(), new_value.end(), '"', ' ');
+                new_value = new_value.substr(1, new_value.size() - 2); // ignore spaces introduced by removing the quotes
+
+                // convert string to bytes and add them to the vector
+                const char *str_ptr = new_value.c_str();
+                while (*str_ptr != '\0') {
+                    values.emplace_back(*str_ptr);
+                    str_ptr++;
+                }
+            } else if (std::all_of(new_value.begin(), new_value.end(), ::isdigit)) {
+                // value is a byte
+                char *end_ptr = nullptr;
+                uint8_t char_value = static_cast<uint8_t>(std::strtoull(new_value.c_str(), &end_ptr, 10));
+                if ((size_t)(end_ptr - new_value.c_str()) != new_value.size()) {
+                    std::cerr << "ERROR: Invalid number '" << new_value << "'." << std::endl;
+                    std::cerr << "      " << path << ":" << line_count << std::endl;
+                    exit(1);
+                }
+
+                values.emplace_back(char_value);
+            } else {
+                std::cerr << "ERROR: Invalid number '" << new_value << "'." << std::endl;
+                std::cerr << "      " << path << ":" << line_count << std::endl;
+                exit(1);
+            }
+
+            // processed last item, nothing else to do
+            if (last_item)
+                break;
+
+            // 'remove' the value from the original string and find the next comma
+            string_split_by_delimeter(directive_values, ',', false);
+            comma_idx = directive_values.find_first_of(',');
+            last_item = comma_idx == std::string::npos;
+        }
+
+        // add a new define to the map (with the addr of the requested memory block)
+        preprocessor_defines.emplace(std::move(directive_name), std::to_string(memory.size()));
+
+        // reserve the requested memory amount (initialized with 0)
+        for (size_t i = 0; i < values.size(); i++) {
+            memory.push_back(Nan_Box(static_cast<int64_t>(values[i])));
+        }
     } else {
         std::cerr << "ERROR: Unknown preprocessor directive '" << directive_operation << "'." << std::endl;
         std::cerr << "      " << path << ":" << line_count << std::endl;

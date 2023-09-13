@@ -22,28 +22,30 @@ private:
     uint64_t ip;
     size_t current_program_size;
 
-    // memory
-    std::vector<Nan_Box> memory;
+    // static memory
+    std::vector<Nan_Box> *memory;
 
     // native functions
     typedef void (Vm::*Native_Func)();
     void native_malloc();
     void native_free();
+    void native_fwrite();
 
     constexpr static const Native_Func native_funcs_addrs[] = {
         &Vm::native_malloc,
-        &Vm::native_free
+        &Vm::native_free,
+        &Vm::native_fwrite
     };
 
 public:
     Vm();
     ~Vm();
 
-    void execute_program(Inst program[], const size_t program_size);
+    // void execute_program(Inst program[], const size_t program_size);
     void execute_program(const char *path);
-    inline void execute_program(Program& program) {
+    void execute_program(Program& program); /*{
         this->execute_program(program.insts.data(), program.insts.size());
-    }
+    }*/
 
     Exception_Type execute_instruction(Inst& inst);
 
@@ -53,7 +55,8 @@ public:
 
     constexpr static std::string_view native_funcs_names[] = {
         "malloc",
-        "free"
+        "free",
+        "fwrite"
     };
 
     constexpr static size_t native_funcs_count = sizeof(native_funcs_addrs) / sizeof(Native_Func);

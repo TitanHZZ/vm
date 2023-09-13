@@ -1,8 +1,10 @@
 # simple program to test the usage of memory
+# static memory operations are sequential what means that the string is going to be located after the reserved memory and not inside it
 %define N 258 # iterations (should overflow 8-bit memory)
+%res mem 300 # reserve 300 memory positions in the static memory
 
 main:
-    push 0 # i
+    push mem # i
 
 loop:
     # check if i == N

@@ -48,7 +48,7 @@ typedef struct {
     Nan_Box operand;
 } Inst;
 
-#define MAKE_INST_NOP()         (Inst) {.type = Inst_Type::INST_NOP, .operand = 0}
+/*#define MAKE_INST_NOP()         (Inst) {.type = Inst_Type::INST_NOP, .operand = 0}
 #define MAKE_INST_HALT()        (Inst) {.type = Inst_Type::INST_HALT, .operand = 0}
 #define MAKE_INST_EXIT()        (Inst) {.type = Inst_Type::INST_EXIT, .operand = 0}
 #define MAKE_INST_PUSH(val)     (Inst) {.type = Inst_Type::INST_PUSH, .operand = val}
@@ -81,7 +81,7 @@ typedef struct {
 #define MAKE_INST_WRITE8()      (Inst) {.type = Inst_Type::INST_WRITE8, .operand = 0}
 #define MAKE_INST_WRITE16()     (Inst) {.type = Inst_Type::INST_WRITE16, .operand = 0}
 #define MAKE_INST_WRITE32()     (Inst) {.type = Inst_Type::INST_WRITE32, .operand = 0}
-#define MAKE_INST_WRITE64()     (Inst) {.type = Inst_Type::INST_WRITE64, .operand = 0}
+#define MAKE_INST_WRITE64()     (Inst) {.type = Inst_Type::INST_WRITE64, .operand = 0}*/
 
 static const char *inst_type_as_cstr(const Inst_Type& inst) {
     switch (inst) {
