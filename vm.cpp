@@ -581,7 +581,8 @@ void Vm::native_fwrite() {
     const size_t str_size = static_cast<size_t>(stack[sp-2].as_int());
 
     // get the string (convert from Nan_Box to char)
-    char buf[str_size];
+    std::vector<char> buf;
+    buf.reserve(str_size);
     for (size_t i = 0; i < str_size; i++) {
         buf[i] = static_cast<char>((*memory)[static_cast<size_t>(stack[sp-1].as_int())+i].as_int());
     }
@@ -607,5 +608,5 @@ void Vm::native_fwrite() {
     }
 
     // make the native function call
-    fwrite(buf, 1, str_size, file_ptr);
+    fwrite(buf.data(), 1, str_size, file_ptr);
 }
