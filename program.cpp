@@ -303,7 +303,7 @@ void Program::parse_source_code(const char *path, std::unordered_map<std::string
             continue;
         }
 
-        // this makes sure that the preprocessor defines are applied
+        /*// this makes sure that the preprocessor defines are applied
         for (auto& it: preprocessor_defines) {
             // make sure only one preprocessor define is applied per line
             // this should avoid problems with defines that are substrings of other defines
@@ -311,7 +311,7 @@ void Program::parse_source_code(const char *path, std::unordered_map<std::string
                 line.replace(line.find(it.first), it.first.size(), it.second);
                 break;
             }
-        }
+        }*/
 
         std::string operand = "";
         std::string instruction = "";
@@ -340,6 +340,10 @@ void Program::parse_source_code(const char *path, std::unordered_map<std::string
                 if (operand != "") {
                     // fill in the new instruction
                     new_inst.type = (Inst_Type) inst_to_check;
+
+                    // check if operand is a macroa and if it is, replace with the appropriate value
+                    if (preprocessor_defines.contains(operand))
+                        operand = preprocessor_defines.at(operand);
 
                     // we assume that any instruction that accepts a label, will have an operand of type 'void*'
                     if (inst_operand_might_be_label((Inst_Type)inst_to_check)) {
