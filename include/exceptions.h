@@ -18,7 +18,7 @@ typedef enum {
     EXCEPTION_DIV_POINTER,
     EXCEPTION_BITWISE_NON_INT,
     EXCEPTION_INVALID_MEM_ADDR,
-    EXCEPTION_INVALID_READ_WRITE
+    EXCEPTION_INVALID_READ_WRITE_SIZE
 } Exception_Type;
 
 void exception_handler(Exception_Type exception);

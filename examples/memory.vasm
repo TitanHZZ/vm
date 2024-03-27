@@ -16,11 +16,11 @@ loop:
     # write the value of i to memory
     dup 0
     dup 0
-    write8
+    write 8
 
     # read the value stored in the memory
     dup 0
-    read8
+    read 8
     print 0
     pop
 

@@ -70,7 +70,7 @@ void exception_handler(Exception_Type exception) {
         std::cerr << "'EXCEPTION_INVALID_MEM_ADDR'" << std::endl;
         exit(1);
 
-    case EXCEPTION_INVALID_READ_WRITE:
+    case EXCEPTION_INVALID_READ_WRITE_SIZE:
         std::cerr << "'EXCEPTION_INVALID_READ_WRITE'" << std::endl;
         exit(1);
 
