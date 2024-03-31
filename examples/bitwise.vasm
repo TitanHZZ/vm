@@ -8,7 +8,7 @@ main:
     not
     print 0
     push 3
-    shr
+    sar
     print 0
     not
     print 0
@@ -23,5 +23,9 @@ main:
     print 0
     push 13
     xor
+    print 0
+    push -1
+    push 1
+    shr
     print 0
     exit

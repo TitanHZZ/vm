@@ -227,28 +227,39 @@ Nan_Box& Nan_Box::operator/=(Nan_Box& rhs) {
     return *this;
 }
 
-Nan_Box& Nan_Box::operator<<=(Nan_Box& rhs) {
+Nan_Box& Nan_Box::operator%=(Nan_Box& rhs) {
     const Nan_Type type = this->get_type();
     const Nan_Type rhs_type = rhs.get_type();
 
-    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
-        this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
-    } else {
-        this->box_int(static_cast<uint64_t>(this->as_int() << rhs.as_int()));
-    }
+    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT)
+        this->box_exception(Exception_Type::EXCEPTION_MODULO_NON_INT);
+    else
+        this->box_int(static_cast<uint64_t>(this->as_int() % rhs.as_int()));
 
     return *this;
 }
 
+Nan_Box& Nan_Box::operator<<=(Nan_Box& rhs) {
+    const Nan_Type type = this->get_type();
+    const Nan_Type rhs_type = rhs.get_type();
+
+    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT)
+        this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
+    else
+        this->box_int(static_cast<uint64_t>(this->as_int() << rhs.as_int()));
+
+    return *this;
+}
+
+// arithmetic shift
 Nan_Box& Nan_Box::operator>>=(Nan_Box& rhs) {
     const Nan_Type type = this->get_type();
     const Nan_Type rhs_type = rhs.get_type();
 
-    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
+    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT)
         this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
-    } else {
+    else
         this->box_int(static_cast<uint64_t>(this->as_int() >> rhs.as_int()));
-    }
 
     return *this;
 }
@@ -257,11 +268,10 @@ Nan_Box& Nan_Box::operator&=(Nan_Box& rhs) {
     const Nan_Type type = this->get_type();
     const Nan_Type rhs_type = rhs.get_type();
 
-    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
+    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT)
         this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
-    } else {
+    else
         this->box_int(static_cast<uint64_t>(this->as_int() & rhs.as_int()));
-    }
 
     return *this;
 }
@@ -270,11 +280,10 @@ Nan_Box& Nan_Box::operator|=(Nan_Box& rhs) {
     const Nan_Type type = this->get_type();
     const Nan_Type rhs_type = rhs.get_type();
 
-    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
+    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT)
         this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
-    } else {
+    else
         this->box_int(static_cast<uint64_t>(this->as_int() | rhs.as_int()));
-    }
 
     return *this;
 }
@@ -283,11 +292,10 @@ Nan_Box& Nan_Box::operator^=(Nan_Box& rhs) {
     const Nan_Type type = this->get_type();
     const Nan_Type rhs_type = rhs.get_type();
 
-    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT) {
+    if (type != Nan_Type::INT || rhs_type != Nan_Type::INT)
         this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
-    } else {
+    else
         this->box_int(static_cast<uint64_t>(this->as_int() ^ rhs.as_int()));
-    }
 
     return *this;
 }
@@ -295,11 +303,10 @@ Nan_Box& Nan_Box::operator^=(Nan_Box& rhs) {
 Nan_Box& Nan_Box::operator~() {
     const Nan_Type type = this->get_type();
 
-    if (type != Nan_Type::INT) {
+    if (type != Nan_Type::INT)
         this->box_exception(Exception_Type::EXCEPTION_BITWISE_NON_INT);
-    } else {
+    else
         this->box_int(static_cast<uint64_t>(~this->as_int()));
-    }
 
     return *this;
 }
@@ -308,15 +315,13 @@ bool Nan_Box::operator==(Nan_Box& rhs) {
     const Nan_Type type = this->get_type();
     const Nan_Type rhs_type = rhs.get_type();
 
-    if (type == rhs_type) {
-        if (type == Nan_Type::DOUBLE) {
-            return this->as_double() == rhs.as_double();
-        } else if (type == Nan_Type::INT) {
-            return this->as_int() == rhs.as_int();
-        } else if (type == Nan_Type::PTR) {
-            return this->as_ptr() == rhs.as_ptr();
-        }
-    }
+    if (type != rhs_type)
+        return false;
 
-    return false;
+    if (type == Nan_Type::DOUBLE)
+        return this->as_double() == rhs.as_double();
+    else if (type == Nan_Type::INT)
+        return this->as_int() == rhs.as_int();
+    else if (type == Nan_Type::PTR)
+        return this->as_ptr() == rhs.as_ptr();
 }

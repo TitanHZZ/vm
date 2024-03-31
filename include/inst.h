@@ -6,45 +6,53 @@
 
 typedef int64_t Word;
 typedef enum {
-    INST_NOP = 0,
-    INST_HALT, // debug inst
-    INST_EXIT,
+    // uncategorized instructions
+    INST_NOP = 0, // does nothing
+    INST_EXIT,    // terminate the execution
+
+    // stack specific instructions
     INST_PUSH,
     INST_POP,
+    INST_SWAP,
+    INST_DUP,
+    INST_PRINT,
+
+    // arithmetic instructions
     INST_ADD,
     INST_SUB,
     INST_MUL,
     INST_DIV,
-    INST_JMP,
-    INST_EQU,
-    INST_JMP_IF,
-    INST_DUP,
-    INST_DUMP_STACK,
-    INST_DUMP_MEMORY,
-    INST_SWAP,
-    INST_CALL,
-    INST_RET,
-    INST_NATIVE,
-    INST_PRINT,
-    INST_SHL,
-    INST_SHR,
+    INST_MOD,
+
+    // logical instructions
     INST_AND,
     INST_OR,
     INST_XOR,
     INST_NOT,
 
+    // native functions related instructions
+    INST_NATIVE,
+
+    // bitwise instructions
+    INST_SHL, // logical shift
+    INST_SHR, // logical shift
+    INST_SAR, // arithmetic shift
+
+    // control flow instructions
+    INST_JMP,
+    INST_EQU,
+    INST_JMP_IF,
+    INST_CALL,
+    INST_RET,
+
     // memory related instructions
     INST_READ,
-    // INST_READ8,
-    // INST_READ16,
-    // INST_READ32,
-    // INST_READ64,
     INST_WRITE,
-    // INST_WRITE8,
-    // INST_WRITE16,
-    // INST_WRITE32,
-    // INST_WRITE64,
 
+    // debug/testing instructions
+    INST_DUMP_STACK,
+    INST_DUMP_MEMORY,
+    INST_HALT, // debug inst (stops the execution)
     INST_COUNT // this is not a valid instruction (used to known how many instructions we have)
 } Inst_Type;
 
@@ -62,6 +70,7 @@ static const char *inst_type_as_cstr(const Inst_Type& inst) {
     case Inst_Type::INST_SUB:         return "sub";
     case Inst_Type::INST_MUL:         return "mul";
     case Inst_Type::INST_DIV:         return "div";
+    case Inst_Type::INST_MOD:         return "mod";
     case Inst_Type::INST_JMP:         return "jmp";
     case Inst_Type::INST_HALT:        return "halt";
     case Inst_Type::INST_EXIT:        return "exit";
@@ -77,20 +86,13 @@ static const char *inst_type_as_cstr(const Inst_Type& inst) {
     case Inst_Type::INST_PRINT:       return "print";
     case Inst_Type::INST_SHL:         return "shl";
     case Inst_Type::INST_SHR:         return "shr";
+    case Inst_Type::INST_SAR:         return "sar";
     case Inst_Type::INST_AND:         return "and";
     case Inst_Type::INST_OR:          return "or";
     case Inst_Type::INST_XOR:         return "xor";
     case Inst_Type::INST_NOT:         return "not";
     case Inst_Type::INST_READ:        return "read";
     case Inst_Type::INST_WRITE:       return "write";
-    // case Inst_Type::INST_READ8:       return "read8";
-    // case Inst_Type::INST_READ16:      return "read16";
-    // case Inst_Type::INST_READ32:      return "read32";
-    // case Inst_Type::INST_READ64:      return "read64";
-    // case Inst_Type::INST_WRITE8:      return "write8";
-    // case Inst_Type::INST_WRITE16:     return "write16";
-    // case Inst_Type::INST_WRITE32:     return "write32";
-    // case Inst_Type::INST_WRITE64:     return "write64";
     case Inst_Type::INST_COUNT:
     default:
         std::cerr << "ERROR: Could not parse instruction, unknown instruction." << std::endl;
@@ -99,7 +101,8 @@ static const char *inst_type_as_cstr(const Inst_Type& inst) {
 }
 
 static inline bool inst_requires_operand(const Inst_Type& inst) {
-    return inst == INST_PUSH || inst == INST_JMP || inst == INST_JMP_IF || inst == INST_DUP || inst == INST_SWAP || inst == INST_CALL || inst == INST_NATIVE || inst == INST_PRINT || inst == INST_READ || inst == INST_WRITE;
+    return inst == INST_PUSH || inst == INST_JMP    || inst == INST_JMP_IF || inst == INST_DUP  || inst == INST_SWAP ||
+           inst == INST_CALL || inst == INST_NATIVE || inst == INST_PRINT  || inst == INST_READ || inst == INST_WRITE;
 }
 
 static inline bool inst_operand_might_be_label(const Inst_Type& inst) {

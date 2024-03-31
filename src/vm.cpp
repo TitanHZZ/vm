@@ -54,6 +54,10 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
     case Inst_Type::INST_NOP:
         break;
 
+    case Inst_Type::INST_HALT:
+        // nothing to do
+        return Exception_Type::EXCEPTION_OK;
+
     case Inst_Type::INST_PUSH:
         if (sp >= STACK_CAP)
             return Exception_Type::EXCEPTION_STACK_OVERFLOW;
@@ -101,16 +105,20 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         sp--;
         break;
 
+    case Inst_Type::INST_MOD:
+        if (sp < 2)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        stack[sp-2] %= stack[sp-1];
+        sp--;
+        break;
+
     case Inst_Type::INST_JMP:
         // no need to check for negative addrs
         if (inst.operand.as_ptr() >= (void*)current_program_size)
             return Exception_Type::EXCEPTION_INVALID_JMP_ADDR;
 
         ip = (uint64_t)inst.operand.as_ptr();
-        return Exception_Type::EXCEPTION_OK;
-
-    case Inst_Type::INST_HALT:
-        // nothing to do
         return Exception_Type::EXCEPTION_OK;
 
     case Inst_Type::INST_EXIT:
@@ -126,10 +134,14 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         break;
 
     case Inst_Type::INST_JMP_IF:
-        if (stack[sp-1] == Nan_Box(static_cast<int64_t>(1))) {
+        if (sp < 1)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (stack[sp-1] != Nan_Box(static_cast<int64_t>(0))) {
             ip = (uint64_t)inst.operand.as_ptr();
             return Exception_Type::EXCEPTION_OK;
         }
+
         sp--;
         break;
 
@@ -247,7 +259,23 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         sp--;
         break;
 
-    case Inst_Type::INST_SHR:
+    case Inst_Type::INST_SHR: {
+        if (sp < 2)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (stack[sp-2].get_type() != Nan_Type::INT || stack[sp-1].get_type() != Nan_Type::INT)
+            return Exception_Type::EXCEPTION_BITWISE_NON_INT;
+
+        const int64_t num = stack[sp-2].as_int();
+        const int64_t shift_amt = stack[sp-1].as_int();
+        const int64_t shifted_res = (num >> shift_amt) & ((1LL << (48LL - shift_amt)) - 1);
+        stack[sp-2].box_int(static_cast<uint64_t>(shifted_res));
+
+        sp--;
+        break;
+    }
+
+    case Inst_Type::INST_SAR:
         if (sp < 2)
             return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
 

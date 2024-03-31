@@ -1,0 +1,356 @@
+vm ISA/spec
+
+--> Description:
+This project consists of a virtual machine for a custom architecture which is defined in this file.
+The virtual machine is a 64 bit, stack based vm with dynamic types and a simple instruction set. As such, this vm has no registers meaning all operations
+are performed on the built-in stack.
+NOTE: For now, the specification is very loose and can/will most likely change.
+
+--> Features:
+Supports multiple data types such as, Double (64 bit), Int (48 bit) and a Ptr (48 bit).
+Supports Labels, String literals, include statements and preprocessor defines.
+Has several exception types but please note that this exceptions only stop the execution and you cannot do anything with them.
+
+--> Instructions:
+nop -> Stands for 'no operation' and does nothing. Just wastes an execution cycle.
+    -> Does not take any arguments and does not alter the stack or any memory.
+    -> Usage example:
+       -> nop
+    -> Cannot raise exceptions.
+
+push -> Pushes a value into the built-in stack.
+     -> Takes one argument and puts that value on the stack.
+        -> The argument might be of type Double or Int as there is no explicit way to push a Ptr to the stack.
+        -> Usage example:
+           -> push 10
+           -> push 3.14
+     -> Does not touch memory other than the stack.
+     -> Raises 'EXCEPTION_STACK_OVERFLOW' if the stack is full and you try to push another value.
+
+pop -> Removes a value from the stack (any data type).
+    -> Does not take any arguments and does not touch any memory other than the stack itself.
+    -> Usage example:
+       -> pop
+    -> Raises 'EXCEPTION_STACK_UNDERFLOW' if the stack is empty.
+
+add -> Adds the top 2 values (consuming them) on the stack and stores the result back.
+       -> Can add Double(s), Int(s) and Ptr(s).
+       -> No convertion needed as the vm performs an implicit type convertion in this case with compatible types.
+          -> Note that when a Double is involved, the resulting data type will always be a Double.
+    -> Does not touch any other memory apart from the stack.
+    -> Usage example:
+       -> add
+       -> Stack before 'add':
+          -> 2 # top of the stack
+          -> 1
+          -> 0
+       -> Stack after the 'add':
+          -> 3 # top of the stack
+          -> 0
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW', 'EXCEPTION_ADD_POINTER_AND_DOUBLE' or 'EXCEPTION_ADD_TWO_POINTERS'.
+
+sub -> Subs the top 2 values (consuming them) on the stack and stores the result back.
+       -> Can subtract Double(s), Int(s) and Ptr(s).
+       -> No convertion needed as the vm performs an implicit type convertion in this case.
+          -> Note that when a Double is involved, the resulting data type will always be a Double.
+    -> Does not touch any other memory apart from the stack.
+    -> Usage example:
+       -> sub
+       -> Stack before 'sub':
+          -> 1 # top of the stack
+          -> 2
+          -> 0
+       -> Stack after the 'sub':
+          -> 1 # top of the stack
+          -> 0
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW', 'EXCEPTION_SUBTRACT_POINTER_AND_DOUBLE' or 'EXCEPTION_SUBTRACT_POINTER_AND_INT'.
+
+mul -> Multiplies the top 2 values (comsuming them) on the stack and stores the result back.
+       -> Can multiply Double(s) and Int(s).
+       -> No convertion needed as the vm performs an implicit type convertion in this case.
+          -> Note that when a Double is involved, the resulting data type will always be a Double.
+    -> Does not touch any other memory apart from the stack.
+    -> Usage example:
+       -> mul
+       -> Stack before 'mul':
+          -> 1 # top of the stack
+          -> 2
+          -> 0
+       -> Stack after the 'mul':
+          -> 1 # top of the stack
+          -> 0
+   -> Might raise 'EXCEPTION_STACK_UNDERFLOW' or 'EXCEPTION_MUL_POINTER'.
+
+div -> Divides the top 2 values (comsuming them) on the stack and stores the result back.
+       -> Can divide Double(s) and Int(s).
+       -> No convertion needed as the vm performs an implicit type convertion in this case.
+          -> Note that the resulting data type will always be a Double.
+    -> Does not touch any other memory apart from the stack.
+    -> Usage example:
+       -> div
+       -> Stack before 'div':
+          -> 2 # top of the stack
+          -> 1
+          -> 0
+       -> Stack after the 'div':
+          -> 0.5 # top of the stack
+          -> 0
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW', 'EXCEPTION_DIV_BY_ZERO' or 'EXCEPTION_DIV_POINTER'.
+
+jmp -> Takes one argument.
+       -> Argument might be an Int or a label.
+       -> This argument will be the new value for the instruction pointer changing the flow of execution.
+    -> Changes no memory at all.
+    -> Usage Examples:
+      -> jmp 10
+      -> jmp loop
+    -> Might raise 'EXCEPTION_INVALID_JMP_ADDR'
+
+halt -> Very close to 'nop' but it stays in a loop in this instruction and never leaves.
+     -> Does not take any number of arguments.
+     -> Does not touch any memory.
+     -> Usage Example:
+        -> halt   # stays here forever
+        -> push 0 # this code will never run!
+    -> Cannot raise exceptions.
+
+exit -> Terminates the execution.
+     -> Does not take arguments.
+     -> Does not touch memory.
+     -> Usage Example:
+        -> exit   # terminates the execution
+        -> push 0 # this code will never run
+    -> Cannot raise exceptions.
+
+equ -> Compares the top 2 values (comsuming them) on the stack and stores the result (0 / 1) back.
+       -> Compares Double(s), Int(s) and Ptr(s) but both values need to be of the same data type.
+    -> Does not touch any memory apart from the stack.
+    -> Does not take arguments.
+    -> Usage example:
+       -> push 1
+       -> push 2
+       -> equ
+       ->Stack before 'equ':
+         -> 2 # top of the stack
+         -> 1
+       -> After the 'equ':
+         -> 0 # top of the stack
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW'.
+
+jif -> Jumps to the addr in the argument if the value on top of the stack is different from 0.
+       -> The argument must be of type Int as there is no explicit way to pass a Ptr as argument.
+       -> The value, to be checked, on the stack must also be of type Int.
+    -> Does not touch any memory apart from the stack itself.
+    -> Usage example:
+       -> push 0
+       -> push 1
+       -> equ
+       -> jif loop
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW'.
+
+dup -> Duplicates a value that is on the stack and puts the result on top.
+       -> Accepts all data types to be duplicated.
+       -> Takes one argument, the index (zero based) on the stack of the value to duplicate.
+          -> The index is relative to the top of the stack and must be an Int.
+    -> Does not touch any memory apart from the stack.
+    -> Usage example:
+       -> push 0
+       -> push 1
+       -> push 2
+       -> dup 1
+       -> Stack before 'dup':
+         -> 2 # top of the stack
+         -> 1
+         -> 0
+       -> Stack after 'dup':
+         -> 1 # top of the stack
+         -> 2
+         -> 1
+         -> 0
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW' or 'EXCEPTION_STACK_OVERFLOW'.
+
+swap -> Swaps the value on top of the stack with another one somewhere in the stack.
+        -> Takes one argument, the index (zero based) on the stack of the value to be swapped.
+           -> Argument must be of type Int.
+     -> Does not touch any memory apart from the stack.
+     -> Usage example:
+        -> push 0
+        -> push 1
+        -> swap 1
+        -> Stack before 'swap':
+           -> 1 # top of the stack
+           -> 0
+        -> Stack after the 'swap':
+           -> 0 # top of the stack
+           -> 1
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW' or 'EXCEPTION_STACK_OVERFLOW'.
+
+shl -> Shift left the bits of the value below the top of the stack.
+       -> The 2 values on the stack must be of type Int.
+    -> Does not take arguments.
+    -> Does not touch any memory apart from the stack.
+    -> Usage example:
+       -> push 10
+       -> push 1
+       -> shl
+       -> Stack before 'shl':
+          -> 1 # top of the stack
+          -> 10
+       -> Stack after 'shl':
+          -> 20 # top of the stack
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW' or 'EXCEPTION_BITWISE_NON_INT'.
+
+shr -> Shift right (logical shift) the bits of the value below the top of the stack.
+       -> The 2 values on the stack must be of type Int.
+    -> Does not take arguments.
+    -> Does not touch any memory apart from the stack.
+    -> Usage example:
+       -> push -1
+       -> push 1
+       -> shl
+       -> Stack before 'shr':
+          -> 1 # top of the stack
+          -> -1
+       -> Stack after 'shr':
+          -> 140737488355327 # top of the stack
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW' or 'EXCEPTION_BITWISE_NON_INT'.
+
+sar -> Shift right (arithmetic shift) the bits of the value below the top of the stack.
+       -> The 2 values must on the stack must be of type Int.
+    -> Does not take any arguments.
+    -> Does not touch any memory apart from the stack.
+    -> Usage example:
+       -> push 1
+       -> push -10
+       -> shr
+       -> Stack before 'shr':
+          -> 1 # top of the stack
+          -> -10
+       -> Stack after 'shr':
+          -> -5 # top of the stack
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW' or 'EXCEPTION_BITWISE_NON_INT'.
+
+xor -> Does a bitwise XOR on the top 2 values from the stack and stores the result back.
+       -> The two values on the stack must be of type Int.
+    -> Does not take arguments.
+    -> Does not touch any memory apart from the stack itself.
+    -> Usage example:
+       -> push 10
+       -> push 5
+       -> xor
+       -> Stack before 'xor':
+          -> 5 # top of the stack
+          -> 10
+       -> Stack after 'xor':
+          -> 15 # top of the stack
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW' or 'EXCEPTION_BITWISE_NON_INT'.
+
+not -> Does a bitwise NOT on the value on top of the stack (consuming the value) and stores the result back.
+      -> The value on the stack needs to be of type Int.
+    -> Does not take any parameters.
+    -> Does not touch any other memory apart from the stack itself.
+    -> Usage example:
+       -> not
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW' or 'EXCEPTION_BITWISE_NON_INT'.
+
+and -> Does a bitwise AND on the value below the top of the stack with the one on the top and stores the value back.
+       -> The values on the stack need to be of type Int.
+    -> Does not take parameters.
+    -> Does not touch any memory apart from the stack itself.
+    -> Usage example:
+       -> and
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW' or 'EXCEPTION_BITWISE_NON_INT'.
+
+or -> Does a bitwise OR on the value below the top of the stack with the one on the top and stores the value back.
+      -> The values on the stack need to be of type Int.
+    -> Does not take parameters.
+    -> Does not touch any memory apart from the stack.
+    -> Usage example:
+       -> or
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW' or 'EXCEPTION_BITWISE_NON_INT'.
+
+mod -> Does modulo operation with the top 2 values on the stack and stores the result back.
+       -> Those 2 values must be of type Int.
+    -> Does not take arguments.
+    -> Does not toucha any memory apart from the stack.
+    -> Usage example:
+       -> push 17
+       -> push 5
+       -> mod
+       -> Stack before 'mod':
+          -> 5 # top of the stack
+          -> 17
+       -> Stack after the 'mod':
+          -> 2 # top of the stack
+
+print -> Prints to stdout a value from the stack.
+         -> Takes one argument, the index of the value on the stack to be printed.
+            -> The index is zero based and starts from the top of the stack.
+            -> The argument (index) must be of type Int.
+         -> Prints Double(s), Int(s) and Ptr(s), all data types available as of now.
+      -> Does not touch any memory apart from the stack itself.
+      -> Usage example:
+         -> push 3.14
+         -> print 0
+      -> Might raise 'EXCEPTION_STACK_UNDERFLOW' or 'EXCEPTION_STACK_OVERFLOW'.
+
+call -> Calls a function (defined by a Label) storing the return addr on top of the stack.
+        -> The return addr will be the addr of the 'call' instruction plus one so, the instruction after the call.
+        -> The function Label is passed by the instruction argument.
+           -> The argument might be of type Int or Ptr.
+        -> This instruction should be used with 'ret'.
+     -> Does not touch any memory apart from the stack itself.
+     -> Usage example:
+        -> call func
+        -> func: ret
+     -> Might raise 'EXCEPTION_STACK_OVERFLOW' or 'EXCEPTION_INVALID_JMP_ADDR'.
+
+ret -> Jumps to the specified addr on the top of the stack, consuming the value.
+       -> The addr needs to be of type Ptr.
+    -> Does not take any arguments.
+    -> Does not touch any memory apart from the stack.
+    -> Usage example:
+       -> ret
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW' or 'EXCEPTION_INVALID_RET_ADDR'.
+
+read -> Reads a value from memory (with a specific size) and stores it in the stack.
+        -> The size is passed as a parameter and might only be one these values: 8, 16, 32 or 64.
+        -> The parameter needs to be of type Int.
+        -> The data type of the data is untouched.
+    -> Changes the stack but only reads from memory, no changes are made.
+    -> Usage example:
+       -> read 8
+    -> Might raise 'EXCEPTION_STACK_UNDERFLOW', 'EXCEPTION_INVALID_READ_WRITE_SIZE' or 'EXCEPTION_INVALID_MEM_ADDR'.
+
+write -> Writes a value from the stack to the memory with a specific size.
+         -> The size is passed as a parameter and might only be one of these values: 8, 16, 32, 64.
+         -> The parameter needs to be of type Int.
+         -> The data type of the data is untouched.
+      -> Reads from the stack (stack remains untouched) and writes to memory.
+      -> Usage example:
+         -> write 8
+      -> Might raise 'EXCEPTION_STACK_UNDERFLOW', 'EXCEPTION_INVALID_READ_WRITE_SIZE' or 'EXCEPTION_INVALID_MEM_ADDR'.
+
+native -> Very simplistic and early on version of some sort of FFI.
+       -> Vm defines a couple of C/C++ functions as being available to use in the vm itself.
+          -> For now, you can call 'malloc', 'free' and 'fwrite'.
+          -> Please look at the source code for more details on implementation.
+       -> Stack and memory usage depends heavily on the C/C++ function being called.
+       -> Usage example:
+          -> native malloc
+       -> Might raise 'EXCEPTION_STACK_UNDERFLOW'.
+          -> Keep in mind that a C/C++ function might error out and those errors are not converted to vm Exceptions yet.
+
+# UNDOCUMENTED INSTRUCTIONS/OPERATIONS
+dump_stack
+dump_memory
+
+# INSTS BEING CONSIDERED FOR IMPLEMENTATION
+td x -> Convert the x value on the stack to a  Double.
+ti x -> Convert the x value on the stack to an Int.
+tp x -> Convert the x value on the stack to a  Ptr.
+
+# CURRENT IMPLEMENTATION PROBLEMS
+The implementation of the source code parser should be properly done with a Lexer and Parser.
+The instructions code does not always check all needed data types for arguments or values on the stack. (How does the memory fit in this problem?)
+The instructions code does not always check if the values being used are valid or not, be it an argument or a value from stack/memory.

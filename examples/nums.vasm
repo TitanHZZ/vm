@@ -26,4 +26,9 @@
     div # simple pi calculation
     print 0
 
+    push 17
+    push 5
+    mod # simple modulo operation
+    print 0
+
     exit
