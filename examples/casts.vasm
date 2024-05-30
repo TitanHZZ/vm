@@ -1,0 +1,11 @@
+# test type casting instructions
+
+main:
+    push 10.6
+    print 0
+    ti 0
+    print 0
+    tp 0
+    print 0
+    td 0
+    print 0

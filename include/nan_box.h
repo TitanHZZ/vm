@@ -14,7 +14,7 @@ class Nan_Box {
 public:
     Nan_Box() {}
     Nan_Box(const double db_value)   : m_value(db_value) {}
-    Nan_Box(const int64_t int_value) : m_value(box_int(static_cast<uint64_t>(int_value))) {}
+    Nan_Box(const int64_t int_value) : m_value(box_int(int_value)) {}
     Nan_Box(const void *ptr_value)   : m_value(box_ptr(ptr_value)) {}
 
     // 'type' related functions
@@ -22,9 +22,9 @@ public:
 
     // 'boxing' functions
     inline double box_double(const double value)     { this->m_value = value; return this->m_value; }
-    double box_int(const uint64_t value)             { this->set_type(Nan_Type::INT);       this->set_value(value); return this->m_value; }
-    double box_ptr(const void *const ptr)            { this->set_type(Nan_Type::PTR);       this->set_value((uint64_t)ptr); return this->m_value; }
-    double box_exception(const Exception_Type value) { this->set_type(Nan_Type::EXCEPTION); this->set_value(value); return this->m_value; }
+    double box_int(const int64_t value)              { this->set_type(Nan_Type::INT);       this->set_value((uint64_t)value); return this->m_value; }
+    double box_ptr(const void *const ptr)            { this->set_type(Nan_Type::PTR);       this->set_value((uint64_t)ptr);   return this->m_value; }
+    double box_exception(const Exception_Type value) { this->set_type(Nan_Type::EXCEPTION); this->set_value(value);           return this->m_value; }
 
     // casting functions
     inline double  as_double () { return m_value; }

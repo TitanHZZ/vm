@@ -342,13 +342,11 @@ native -> Very simplistic and early on version of some sort of FFI.
           -> Keep in mind that a C/C++ function might error out and those errors are not converted to vm Exceptions yet.
 
 # UNDOCUMENTED INSTRUCTIONS/OPERATIONS
-dump_stack
-dump_memory
-
-# INSTS BEING CONSIDERED FOR IMPLEMENTATION
 td x -> Convert the x value on the stack to a  Double.
 ti x -> Convert the x value on the stack to an Int.
 tp x -> Convert the x value on the stack to a  Ptr.
+dump_stack
+dump_memory
 
 # CURRENT IMPLEMENTATION PROBLEMS
 The implementation of the source code parser should be properly done with a Lexer and Parser.

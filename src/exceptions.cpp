@@ -74,6 +74,10 @@ void exception_handler(Exception_Type exception) {
         std::cerr << "'EXCEPTION_INVALID_READ_WRITE'" << std::endl;
         exit(1);
 
+    case EXCEPTION_MODULO_NON_INT:
+        std::cerr << "'EXCEPTION_MODULO_NON_INT'" << std::endl;
+        exit(1);
+
     default:
         std::cerr << "when handling another exception: 'EXCEPTION_UNKNOWN'" << std::endl;
         exit(1);

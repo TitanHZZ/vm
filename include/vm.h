@@ -7,6 +7,12 @@
 #include "inst.h"
 #include "nan_box.h"
 
+// macro used with the read and write instructions to cast the value to the requested size
+#define CAST_TO_SIZE(size, value) \
+    (size == 8  ? (int64_t)(int8_t)(value)  : \
+    (size == 16 ? (int64_t)(int16_t)(value) : \
+    (size == 32 ? (int64_t)(int32_t)(value) : (int64_t)(value))))
+
 #define STACK_CAP 1024
 #define DEFAULT_STATIC_MEM_CAP 300
 #define EXECUTION_LIMIT 10000

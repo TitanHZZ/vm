@@ -17,6 +17,11 @@ typedef enum {
     INST_DUP,
     INST_PRINT,
 
+    // type casting instructions
+    INST_TD, // convert value to Double
+    INST_TI, // convert value to Int
+    INST_TP, // convert value to Ptr
+
     // arithmetic instructions
     INST_ADD,
     INST_SUB,
@@ -61,6 +66,16 @@ typedef struct {
     Nan_Box operand;
 } Inst;
 
+// this is used to remove the warnings about the function not being used
+#if defined(__GNUC__) || defined(__clang__)
+    #define USED_FUNCTION __attribute__((used))
+#elif defined(_MSC_VER)
+    #define USED_FUNCTION __pragma(warning(suppress: 4505))
+#else
+    #define USED_FUNCTION
+#endif
+
+static const char *inst_type_as_cstr(const Inst_Type& inst) USED_FUNCTION;
 static const char *inst_type_as_cstr(const Inst_Type& inst) {
     switch (inst) {
     case Inst_Type::INST_NOP:         return "nop";
@@ -93,6 +108,9 @@ static const char *inst_type_as_cstr(const Inst_Type& inst) {
     case Inst_Type::INST_NOT:         return "not";
     case Inst_Type::INST_READ:        return "read";
     case Inst_Type::INST_WRITE:       return "write";
+    case Inst_Type::INST_TD:          return "td";
+    case Inst_Type::INST_TI:          return "ti";
+    case Inst_Type::INST_TP:          return "tp";
     case Inst_Type::INST_COUNT:
     default:
         std::cerr << "ERROR: Could not parse instruction, unknown instruction." << std::endl;
@@ -101,8 +119,9 @@ static const char *inst_type_as_cstr(const Inst_Type& inst) {
 }
 
 static inline bool inst_requires_operand(const Inst_Type& inst) {
-    return inst == INST_PUSH || inst == INST_JMP    || inst == INST_JMP_IF || inst == INST_DUP  || inst == INST_SWAP ||
-           inst == INST_CALL || inst == INST_NATIVE || inst == INST_PRINT  || inst == INST_READ || inst == INST_WRITE;
+    return inst == INST_PUSH || inst == INST_JMP    || inst == INST_JMP_IF || inst == INST_DUP  || inst == INST_SWAP  ||
+           inst == INST_CALL || inst == INST_NATIVE || inst == INST_PRINT  || inst == INST_READ || inst == INST_WRITE ||
+           inst == INST_TD   || inst == INST_TI     || inst == INST_TP;
 }
 
 static inline bool inst_operand_might_be_label(const Inst_Type& inst) {

@@ -2,12 +2,6 @@
 
 #include "vm.h"
 
-// macro used with the read and write instructions to cast the value to the requested size
-#define CAST_TO_SIZE(size, value) \
-    (size == 8  ? (int64_t)(int8_t)(value)  : \
-    (size == 16 ? (int64_t)(int16_t)(value) : \
-    (size == 32 ? (int64_t)(int32_t)(value) : (int64_t)(value))))
-
 Vm::Vm() {}
 Vm::~Vm(){}
 
@@ -239,8 +233,108 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
 
         case Nan_Type::PTR: {
             // taken from: https://www.tutorialspoint.com/cplusplus-program-to-print-values-in-a-specified-format
-            const void *const ptr = stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_ptr();
-            std::cout << std::hex << std::showbase << (long long) ptr << std::endl;
+            // const void *const ptr = stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_ptr();
+            // std::cout << std::hex << std::showbase << (long long) ptr << std::endl;
+            std::cout << stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_ptr() << std::endl;
+            break;
+        }
+
+        case Nan_Type::EXCEPTION:
+        default:
+            std::cerr << "ERROR: Unknown variable data type in the stack." << std::endl;
+            exit(1);
+        }
+        break;
+
+    case Inst_Type::INST_TD:
+        if (sp < 1)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (sp-static_cast<size_t>(inst.operand.as_int()) <= 0)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (sp-static_cast<size_t>(inst.operand.as_int()) > sp)
+            return Exception_Type::EXCEPTION_STACK_OVERFLOW;
+
+        switch (stack[sp-static_cast<size_t>(inst.operand.as_int())-1].get_type()) {
+        case Nan_Type::INT:{
+            const double casted_value = (double)stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_int();
+            stack[sp-static_cast<size_t>(inst.operand.as_int())-1].box_double(casted_value);
+            break;
+        }
+
+        case Nan_Type::PTR: {
+            const double casted_value = (double)(int64_t)stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_ptr();
+            stack[sp-static_cast<size_t>(inst.operand.as_int())-1].box_double(casted_value);
+            break;
+        }
+
+        case Nan_Type::DOUBLE:
+            break;
+
+        case Nan_Type::EXCEPTION:
+        default:
+            std::cerr << "ERROR: Unknown variable data type in the stack." << std::endl;
+            exit(1);
+        }
+        break;
+
+    case Inst_Type::INST_TI:
+        if (sp < 1)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (sp-static_cast<size_t>(inst.operand.as_int()) <= 0)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (sp-static_cast<size_t>(inst.operand.as_int()) > sp)
+            return Exception_Type::EXCEPTION_STACK_OVERFLOW;
+
+        switch (stack[sp-static_cast<size_t>(inst.operand.as_int())-1].get_type()) {
+        case Nan_Type::INT:
+            break;
+
+        case Nan_Type::PTR: {
+            const int64_t casted_value = (int64_t)stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_ptr();
+            stack[sp-static_cast<size_t>(inst.operand.as_int())-1].box_int(casted_value);
+            break;
+        }
+
+        case Nan_Type::DOUBLE: {
+            const int64_t casted_value = (int64_t)stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_double();
+            stack[sp-static_cast<size_t>(inst.operand.as_int())-1].box_int(casted_value);
+            break;
+        }
+
+        case Nan_Type::EXCEPTION:
+        default:
+            std::cerr << "ERROR: Unknown variable data type in the stack." << std::endl;
+            exit(1);
+        }
+        break;
+
+    case Inst_Type::INST_TP:
+        if (sp < 1)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (sp-static_cast<size_t>(inst.operand.as_int()) <= 0)
+            return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
+
+        if (sp-static_cast<size_t>(inst.operand.as_int()) > sp)
+            return Exception_Type::EXCEPTION_STACK_OVERFLOW;
+
+        switch (stack[sp-static_cast<size_t>(inst.operand.as_int())-1].get_type()) {
+        case Nan_Type::INT: {
+            const void *casted_value = (void *)stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_int();
+            stack[sp-static_cast<size_t>(inst.operand.as_int())-1].box_ptr(casted_value);
+            break;
+        }
+
+        case Nan_Type::PTR:
+            break;
+
+        case Nan_Type::DOUBLE: {
+            const void *casted_value = (void *)(uint64_t)stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_double();
+            stack[sp-static_cast<size_t>(inst.operand.as_int())-1].box_ptr(casted_value);
             break;
         }
 
@@ -269,7 +363,7 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         const int64_t num = stack[sp-2].as_int();
         const int64_t shift_amt = stack[sp-1].as_int();
         const int64_t shifted_res = (num >> shift_amt) & ((1LL << (48LL - shift_amt)) - 1);
-        stack[sp-2].box_int(static_cast<uint64_t>(shifted_res));
+        stack[sp-2].box_int(shifted_res);
 
         sp--;
         break;
