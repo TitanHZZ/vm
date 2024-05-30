@@ -341,10 +341,24 @@ native -> Very simplistic and early on version of some sort of FFI.
        -> Might raise 'EXCEPTION_STACK_UNDERFLOW'.
           -> Keep in mind that a C/C++ function might error out and those errors are not converted to vm Exceptions yet.
 
+t<x> -> Converts the value on top of the stack to the type <x>.
+        -> <x> can be 'd', 'i' or 'p'.
+           -> Converts to Double, Int or Ptr respectively.
+        -> Value gets converted to the target type regardless of the type of the value to be converted.
+        -> Takes one argument, the index of the value on the stack to be converted.
+           -> The index is zero based and starts from the top of the stack
+           -> The argument (index) must be of type Int.
+        -> Does not touch any memory apart from the stack itself.
+           -> Just reads data, no writes.
+        -> Usage example:
+           -> push 10.6
+           -> ti 0
+           -> Stack before 'ti':
+              -> 10.6 # top of the stack
+           -> Stack after 'ti':
+              -> 10 # top of the stack
+
 # UNDOCUMENTED INSTRUCTIONS/OPERATIONS
-td x -> Convert the x value on the stack to a  Double.
-ti x -> Convert the x value on the stack to an Int.
-tp x -> Convert the x value on the stack to a  Ptr.
 dump_stack
 dump_memory
 
