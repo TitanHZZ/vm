@@ -232,10 +232,13 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
             break;
 
         case Nan_Type::PTR: {
+            const void *const ptr = stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_ptr();
+            const std::uintptr_t int_ptr = reinterpret_cast<std::uintptr_t>(ptr);
+            std::cout << std::hex << std::showbase << int_ptr << std::endl;
             // taken from: https://www.tutorialspoint.com/cplusplus-program-to-print-values-in-a-specified-format
-            // const void *const ptr = stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_ptr();
+            // std::cout << std::hex << std::showbase << ptr << std::endl;
             // std::cout << std::hex << std::showbase << (long long) ptr << std::endl;
-            std::cout << stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_ptr() << std::endl;
+            // std::cout << stack[sp-static_cast<size_t>(inst.operand.as_int())-1].as_ptr() << std::endl;
             break;
         }
 
@@ -577,7 +580,7 @@ void Vm::native_fwrite() {
     std::vector<char> buf;
     buf.reserve(str_size);
     for (size_t i = 0; i < str_size; i++) {
-        buf[i] = static_cast<char>((*memory)[static_cast<size_t>(stack[sp-1].as_int())+i].as_int());
+        buf.push_back(static_cast<char>((*memory)[static_cast<size_t>(stack[sp-1].as_int())+i].as_int()));
     }
 
     // get the file 'pointer'
