@@ -28,6 +28,7 @@ int main(int argc, char const *argv[]) {
     Program p;
     p.read_from_file(input_file_path.data());
 
+    std::cout << "BITS 64" << std::endl << std::endl;
     std::cout << "%define SYS_EXIT 60" << std::endl;
     std::cout << "%define STACK_CAP " << STACK_CAP << std::endl << std::endl;
     std::cout << "section .text" << std::endl;
@@ -41,6 +42,8 @@ int main(int argc, char const *argv[]) {
         case Inst_Type::INST_EXIT:
             break;
         case Inst_Type::INST_PUSH:
+            std::cout << "    ; PUSH" << std::endl;
+            std::cout << "    mov QWORD [stack], " << inst.operand << std::endl;
             break;
         case Inst_Type::INST_POP:
             break;
@@ -112,9 +115,9 @@ int main(int argc, char const *argv[]) {
     std::cout << "    mov rax, SYS_EXIT" << std::endl;
     std::cout << "    mov rdi, 0" << std::endl;
     std::cout << "    syscall" << std::endl << std::endl;
-    std::cout << "sector .data" << std::endl;
-    std::cout << "stack_top: stack" << std::endl << std::endl;
-    std::cout << "sector .bss" << std::endl;
+    // std::cout << "section .data" << std::endl;
+    // std::cout << "stack_top: dq stack" << std::endl << std::endl;
+    std::cout << "section .bss" << std::endl;
     std::cout << "stack: resq STACK_CAP" << std::endl;
 
     return 0;

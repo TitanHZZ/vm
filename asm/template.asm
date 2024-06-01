@@ -1,3 +1,5 @@
+BITS 64
+
 %define SYS_EXIT 60
 %define STACK_CAP 1024
 
@@ -9,8 +11,8 @@ _start:
     mov rdi, 0 ; exit code
     syscall
 
-sector .data
-stack_top: stack
+section .data
+stack_top: dq stack
 
-sector .bss
+section .bss
 stack: resq STACK_CAP

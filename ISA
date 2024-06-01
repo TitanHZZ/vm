@@ -19,6 +19,7 @@ nop -> Stands for 'no operation' and does nothing. Just wastes an execution cycl
     -> Cannot raise exceptions.
 
 push -> Pushes a value into the built-in stack.
+     -> Increments the stack pointer by 1.
      -> Takes one argument and puts that value on the stack.
         -> The argument might be of type Double or Int as there is no explicit way to push a Ptr to the stack.
         -> Usage example:

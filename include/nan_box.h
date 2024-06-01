@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <ostream>
 
 #include "exceptions.h"
 
@@ -27,13 +28,36 @@ public:
     double box_exception(const Exception_Type value) { this->set_type(Nan_Type::EXCEPTION); this->set_value(value);           return this->m_value; }
 
     // casting functions
-    inline double  as_double () { return m_value; }
-    inline int64_t as_int    () { return (int64_t) get_value(); }
-    inline void   *as_ptr    () { return (void *)  get_value(); }
+    inline double  as_double () const { return m_value; }
+    inline int64_t as_int    () const { return (int64_t) get_value(); }
+    inline void   *as_ptr    () const { return (void *)  get_value(); }
     inline Exception_Type as_exception() { return (Exception_Type) get_value(); }
 
     // debug function
     // void print_bits_representation(uint8_t *const ptr, const size_t size);
+
+    friend std::ostream& operator<<(std::ostream& os, const Nan_Box& obj) {
+        switch (obj.get_type()) {
+        case Nan_Type::DOUBLE:
+            os << obj.as_double();
+            break;
+
+        case Nan_Type::INT:
+            os << obj.as_int();
+            break;
+        
+        case Nan_Type::PTR:
+            os << obj.as_ptr();
+            break;
+
+        case Nan_Type::EXCEPTION:
+        default:
+            // TODO
+            break;
+        }
+
+        return os;
+    }
 
     // TODO: add exception handling to these operators
     Nan_Box& operator+=(Nan_Box& rhs);
