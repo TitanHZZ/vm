@@ -31,7 +31,7 @@ int main(int argc, char const *argv[]) {
     std::cout << "BITS 64" << std::endl << std::endl;
     std::cout << "%define SYS_EXIT 60" << std::endl;
     std::cout << "%define STACK_CAP " << STACK_CAP << std::endl << std::endl;
-    std::cout << "extern Nan_Box_box_int" << std::endl << std::endl;
+    std::cout << "extern Nan_Box_box_int, Nan_Box_add" << std::endl << std::endl;
     std::cout << "section .text" << std::endl;
     std::cout << "    global _start" << std::endl << std::endl;
     std::cout << "_start:" << std::endl;
@@ -43,7 +43,7 @@ int main(int argc, char const *argv[]) {
         case Inst_Type::INST_EXIT:
             break;
         case Inst_Type::INST_PUSH:
-            std::cout << "    ; PUSH" << std::endl;
+            std::cout << "    ; push " << inst.operand << std::endl;
             std::cout << "    mov rdi, [stack_top]" << std::endl;
             std::cout << "    mov rsi, " << inst.operand << std::endl;
             std::cout << "    call Nan_Box_box_int" << std::endl;
@@ -64,6 +64,12 @@ int main(int argc, char const *argv[]) {
         case Inst_Type::INST_TP:
             break;
         case Inst_Type::INST_ADD:
+            std::cout << "    ; add" << std::endl;
+            std::cout << "    mov rax, [stack_top]" << std::endl;
+            std::cout << "    lea rdi, [rax-16]" << std::endl;
+            std::cout << "    lea rsi, [rax-8]" << std::endl;
+            std::cout << "    call Nan_Box_add" << std::endl;
+            std::cout << "    sub QWORD [stack_top], 8" << std::endl << std::endl;
             break;
         case Inst_Type::INST_SUB:
             break;
