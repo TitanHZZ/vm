@@ -31,6 +31,7 @@ int main(int argc, char const *argv[]) {
     std::cout << "BITS 64" << std::endl << std::endl;
     std::cout << "%define SYS_EXIT 60" << std::endl;
     std::cout << "%define STACK_CAP " << STACK_CAP << std::endl << std::endl;
+    std::cout << "extern Nan_Box_box_int" << std::endl << std::endl;
     std::cout << "section .text" << std::endl;
     std::cout << "    global _start" << std::endl << std::endl;
     std::cout << "_start:" << std::endl;
@@ -43,7 +44,10 @@ int main(int argc, char const *argv[]) {
             break;
         case Inst_Type::INST_PUSH:
             std::cout << "    ; PUSH" << std::endl;
-            std::cout << "    mov QWORD [stack], " << inst.operand << std::endl;
+            std::cout << "    mov rdi, [stack_top]" << std::endl;
+            std::cout << "    mov rsi, " << inst.operand << std::endl;
+            std::cout << "    call Nan_Box_box_int" << std::endl;
+            std::cout << "    add QWORD [stack_top], " << WORD_SIZE << std::endl << std::endl;
             break;
         case Inst_Type::INST_POP:
             break;
@@ -112,11 +116,12 @@ int main(int argc, char const *argv[]) {
         }
     }
 
+    std::cout << "    ; EXIT" << std::endl;
     std::cout << "    mov rax, SYS_EXIT" << std::endl;
     std::cout << "    mov rdi, 0" << std::endl;
     std::cout << "    syscall" << std::endl << std::endl;
-    // std::cout << "section .data" << std::endl;
-    // std::cout << "stack_top: dq stack" << std::endl << std::endl;
+    std::cout << "section .data" << std::endl;
+    std::cout << "stack_top: dq stack" << std::endl << std::endl;
     std::cout << "section .bss" << std::endl;
     std::cout << "stack: resq STACK_CAP" << std::endl;
 

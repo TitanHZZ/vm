@@ -2,7 +2,12 @@
 
 set -xe
 
-../build/src/vasm2x86_64 -i ../pre.vm > gen.asm
+../build/src/vasma -i ../examples/123i.vasm -o ../build/123i.vm
+../build/src/vasm2x86_64 -i ../build/123i.vm > gen.asm
 
-/usr/bin/nasm -felf64 gen.asm
-/usr/bin/ld -o gen gen.o
+# compile
+/usr/bin/nasm -f elf64 nan_box.asm -o nan_box.o
+/usr/bin/nasm -f elf64 gen.asm -o gen.o
+
+# link
+/usr/bin/ld -m elf_x86_64 gen.o nan_box.o -o gen
