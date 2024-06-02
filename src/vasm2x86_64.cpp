@@ -31,7 +31,7 @@ int main(int argc, char const *argv[]) {
     std::cout << "BITS 64" << std::endl << std::endl;
     std::cout << "%define SYS_EXIT 60" << std::endl;
     std::cout << "%define STACK_CAP " << STACK_CAP << std::endl << std::endl;
-    std::cout << "extern Nan_Box_box_int, Nan_Box_add" << std::endl << std::endl;
+    std::cout << "extern Nan_Box_box_int, Nan_Box_add, Nan_Box_print" << std::endl << std::endl;
     std::cout << "section .text" << std::endl;
     std::cout << "    global _start" << std::endl << std::endl;
     std::cout << "_start:" << std::endl;
@@ -56,6 +56,10 @@ int main(int argc, char const *argv[]) {
         case Inst_Type::INST_DUP:
             break;
         case Inst_Type::INST_PRINT:
+            std::cout << "    ; print " << inst.operand << std::endl;
+            std::cout << "    mov rdi, [stack_top]" << std::endl;
+            std::cout << "    sub rdi, 8" << std::endl;
+            std::cout << "    call Nan_Box_print" << std::endl << std::endl;
             break;
         case Inst_Type::INST_TD:
             break;
@@ -66,8 +70,8 @@ int main(int argc, char const *argv[]) {
         case Inst_Type::INST_ADD:
             std::cout << "    ; add" << std::endl;
             std::cout << "    mov rax, [stack_top]" << std::endl;
-            std::cout << "    lea rdi, [rax-16]" << std::endl;
-            std::cout << "    lea rsi, [rax-8]" << std::endl;
+            std::cout << "    lea rdi, [rax-" << WORD_SIZE * 2 << "]" << std::endl;
+            std::cout << "    lea rsi, [rax-" << WORD_SIZE << "]" << std::endl;
             std::cout << "    call Nan_Box_add" << std::endl;
             std::cout << "    sub QWORD [stack_top], 8" << std::endl << std::endl;
             break;
@@ -122,7 +126,7 @@ int main(int argc, char const *argv[]) {
         }
     }
 
-    std::cout << "    ; EXIT" << std::endl;
+    std::cout << "    ; exit" << std::endl;
     std::cout << "    mov rax, SYS_EXIT" << std::endl;
     std::cout << "    mov rdi, 0" << std::endl;
     std::cout << "    syscall" << std::endl << std::endl;

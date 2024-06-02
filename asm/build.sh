@@ -7,4 +7,4 @@ set -xe
 /usr/bin/nasm -f elf64 template.asm -o template.o
 
 # link
-/usr/bin/ld -m elf_x86_64 template.o nan_box.o -o template
+/usr/bin/gcc -m64 -no-pie -o template template.o nan_box.o -nostartfiles

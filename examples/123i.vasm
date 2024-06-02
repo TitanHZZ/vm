@@ -4,3 +4,4 @@
     push 30
     add
     add
+    print 0

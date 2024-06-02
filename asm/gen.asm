@@ -3,7 +3,7 @@ BITS 64
 %define SYS_EXIT 60
 %define STACK_CAP 1024
 
-extern Nan_Box_box_int, Nan_Box_add
+extern Nan_Box_box_int, Nan_Box_add, Nan_Box_print
 
 section .text
     global _start
@@ -41,7 +41,12 @@ _start:
     call Nan_Box_add
     sub QWORD [stack_top], 8
 
-    ; EXIT
+    ; print 0
+    mov rdi, [stack_top]
+    sub rdi, 8
+    call Nan_Box_print
+
+    ; exit
     mov rax, SYS_EXIT
     mov rdi, 0
     syscall

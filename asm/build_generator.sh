@@ -10,4 +10,4 @@ set -xe
 /usr/bin/nasm -f elf64 gen.asm -o gen.o
 
 # link
-/usr/bin/ld -m elf_x86_64 gen.o nan_box.o -o gen
+/usr/bin/gcc -m64 -no-pie -o gen gen.o nan_box.o -nostartfiles
