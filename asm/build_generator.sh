@@ -2,8 +2,8 @@
 
 set -xe
 
-../build/src/vasma -i ../examples/123i.vasm -o ../build/123i.vm
-../build/src/vasm2x86_64 -i ../build/123i.vm > gen.asm
+../build/src/vasma -i ../examples/fibonacci.vasm -o ../build/fibonacci.vm
+../build/src/vasm2x86_64 -i ../build/fibonacci.vm > gen.asm
 
 # compile
 /usr/bin/nasm -f elf64 nan_box.asm -o nan_box.o

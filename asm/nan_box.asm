@@ -5,7 +5,7 @@ BITS 64
 extern printf
 
 section .text
-    global Nan_Box_box_int, Nan_Box_add, Nan_Box_print
+    global Nan_Box_box_int, Nan_Box_add, Nan_Box_print, Nan_Box_equ, Nan_Box_get_value
 
 ; RDI -> ptr to the result memory location
 ; RSI -> value to box
@@ -215,6 +215,107 @@ Nan_Box_print:
     mov edi, print_int_fmt
     xor eax, eax
     jmp printf
+
+; RDI -> ptr to the first value
+; RSI -> ptr to the second value
+; RAX -> receives the comparison result
+Nan_Box_equ:
+    movsd   xmm0, QWORD [rdi]
+    movsd   xmm1, QWORD [rsi]
+    ucomisd xmm0, xmm0
+    jp      .L61
+    ucomisd xmm1, xmm1
+    jp      .L77
+.L62:
+    ucomisd xmm0, xmm1
+    mov     edx, 0
+    setnp   al
+    cmovne  eax, edx
+    ret
+.L61:
+    movq    rdx, xmm0
+    mov     rax, rdx
+    shr     rax, 48
+    mov     ecx, eax
+    and     ecx, 7
+    ucomisd xmm1, xmm1
+    jp      .L64
+    xor     eax, eax
+    test    ecx, ecx
+    je      .L62
+.L60:
+    ret
+.L77:
+    movq rdx, xmm1
+    xor  eax, eax
+    shr  rdx, 48
+    and  edx, 7
+    je   .L62
+    ret
+.L64:
+    movq rsi, xmm1
+    xor  eax, eax
+    mov  rdi, rsi
+    shr  rdi, 48
+    and  edi, 7
+    cmp  edi, ecx
+    jne  .L60
+    test edi, edi
+    je   .L62
+    cmp  edi, 1
+    je   .L78
+    cmp  edi, 2
+    jne  .L60
+    mov  rcx, 281474976710655
+    mov  rax, rsi
+    and  rax, rcx
+    and  rdx, rcx
+.L75:
+    cmp  rax, rdx
+    sete al
+    ret
+.L78:
+    mov rax, 281474976710655
+    and rdx, rax
+    mov rax, rdx
+    shr rax, 47
+    jne .L79
+.L68:
+    mov rax, 281474976710655
+    and rax, rsi
+    mov rcx, rax
+    shr rcx, 47
+    je  .L75
+    mov rcx, -281474976710656
+    or  rax, rcx
+    jmp .L75
+.L79:
+    mov rax, -281474976710656
+    or  rdx, rax
+    jmp .L68
+
+; RDI -> ptr to the Nan_Box
+; RAX -> receives the number (integer)
+Nan_Box_get_value:
+    mov     rax, 281474976710655
+    mov     rdx, QWORD [rdi]
+    movq    xmm0, rdx
+    and     rax, rdx
+    ucomisd xmm0, xmm0
+    jp      .L9
+.L7:
+    ret
+.L9:
+    shr rdx, 48
+    and edx, 7
+    cmp edx, 1
+    jne .L7
+    mov rcx, rax
+    shr rcx, 47
+    je  .L7
+    mov rdx, -281474976710656
+    or  rax, rdx
+    ret
 
 section .data
     print_double_fmt: db "%f", 10, 0

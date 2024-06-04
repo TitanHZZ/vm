@@ -55,5 +55,5 @@ loop:
     jmp loop
 
 end:
-    print 4
+    print 3
     exit

@@ -132,12 +132,12 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         if (sp < 1)
             return Exception_Type::EXCEPTION_STACK_UNDERFLOW;
 
-        if (stack[sp-1] != Nan_Box(static_cast<int64_t>(0))) {
+        sp--;
+        if (stack[sp] != Nan_Box(static_cast<int64_t>(0))) {
             ip = (uint64_t)inst.operand.as_ptr();
             return Exception_Type::EXCEPTION_OK;
         }
 
-        sp--;
         break;
 
     case Inst_Type::INST_DUP:

@@ -28,15 +28,30 @@ int main(int argc, char const *argv[]) {
     Program p;
     p.read_from_file(input_file_path.data());
 
+    // get places for labels
+    size_t label_suffix = 0;
+    std::unordered_map<void*, std::string> jmp_addr_label_names;
+    for (Inst& inst: p.insts) {
+        if (inst_operand_might_be_label(inst.type) && jmp_addr_label_names.contains(inst.operand.as_ptr()) == false) {
+            jmp_addr_label_names.emplace(inst.operand.as_ptr(), "label_" + std::to_string(label_suffix));
+            label_suffix++;
+        }
+    }
+
     std::cout << "BITS 64" << std::endl << std::endl;
     std::cout << "%define SYS_EXIT 60" << std::endl;
     std::cout << "%define STACK_CAP " << STACK_CAP << std::endl << std::endl;
-    std::cout << "extern Nan_Box_box_int, Nan_Box_add, Nan_Box_print" << std::endl << std::endl;
+    std::cout << "extern Nan_Box_box_int, Nan_Box_add, Nan_Box_print, Nan_Box_equ, Nan_Box_get_value" << std::endl << std::endl;
     std::cout << "section .text" << std::endl;
     std::cout << "    global _start" << std::endl << std::endl;
     std::cout << "_start:" << std::endl;
 
+    size_t inst_count = 0;
     for (Inst& inst: p.insts) {
+        // print labels
+        if (jmp_addr_label_names.contains((void*)inst_count))
+            std::cout << jmp_addr_label_names.at((void*)inst_count) << ":" << std::endl;
+
         switch (inst.type) {
         case Inst_Type::INST_NOP:
             break;
@@ -52,13 +67,23 @@ int main(int argc, char const *argv[]) {
         case Inst_Type::INST_POP:
             break;
         case Inst_Type::INST_SWAP:
+            std::cout << "    ; swap " << inst.operand << std::endl;
+            std::cout << "    mov rax, [stack_top]" << std::endl;
+            std::cout << "    mov rbx, [rax-8]" << std::endl;
+            std::cout << "    xchg rbx, [rax-" << WORD_SIZE * (static_cast<uint64_t>(inst.operand.as_int()) + 1) << "]" << std::endl;
+            std::cout << "    xchg rbx, [rax-8]" << std::endl << std::endl;
             break;
         case Inst_Type::INST_DUP:
+            std::cout << "    ; dup " << inst.operand << std::endl;
+            std::cout << "    mov rax, [stack_top]" << std::endl;
+            std::cout << "    mov rbx, [rax-" << WORD_SIZE * (static_cast<uint64_t>(inst.operand.as_int()) + 1) << "]" << std::endl;
+            std::cout << "    mov [rax], rbx" << std::endl;
+            std::cout << "    add QWORD [stack_top], 8" << std::endl << std::endl;
             break;
         case Inst_Type::INST_PRINT:
             std::cout << "    ; print " << inst.operand << std::endl;
             std::cout << "    mov rdi, [stack_top]" << std::endl;
-            std::cout << "    sub rdi, 8" << std::endl;
+            std::cout << "    sub rdi, " << WORD_SIZE * (static_cast<uint64_t>(inst.operand.as_int()) + 1) << std::endl;
             std::cout << "    call Nan_Box_print" << std::endl << std::endl;
             break;
         case Inst_Type::INST_TD:
@@ -102,8 +127,25 @@ int main(int argc, char const *argv[]) {
         case Inst_Type::INST_JMP:
             break;
         case Inst_Type::INST_EQU:
+            std::cout << "    ; equ" << std::endl;
+            std::cout << "    mov rax, [stack_top]" << std::endl;
+            std::cout << "    lea rdi, [rax-16]" << std::endl;
+            std::cout << "    lea rsi, [rax-8]" << std::endl;
+            std::cout << "    call Nan_Box_equ" << std::endl;
+            std::cout << "    mov rdi, [stack_top]" << std::endl;
+            std::cout << "    sub rdi, 16" << std::endl;
+            std::cout << "    mov rsi, rax" << std::endl;
+            std::cout << "    call Nan_Box_box_int" << std::endl;
+            std::cout << "    sub QWORD [stack_top], 8" << std::endl << std::endl;
             break;
         case Inst_Type::INST_JMP_IF:
+            std::cout << "    ; jif " << jmp_addr_label_names.at(inst.operand.as_ptr()) << std::endl;
+            std::cout << "    mov rdi, [stack_top]" << std::endl;
+            std::cout << "    sub rdi, 8" << std::endl;
+            std::cout << "    call Nan_Box_get_value" << std::endl;
+            std::cout << "    sub QWORD [stack_top], 8" << std::endl;
+            std::cout << "    cmp rax, 0" << std::endl;
+            std::cout << "    jne label_0" << std::endl << std::endl;
             break;
         case Inst_Type::INST_CALL:
             break;
@@ -124,6 +166,8 @@ int main(int argc, char const *argv[]) {
         default:
             break;
         }
+
+        inst_count++;
     }
 
     std::cout << "    ; exit" << std::endl;

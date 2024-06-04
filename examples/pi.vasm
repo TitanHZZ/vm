@@ -55,7 +55,7 @@ loop:
 
 end:
     # finish pi calculation and print the result
-    swap 3
+    swap 2
     push 4
     mul
     print 0

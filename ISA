@@ -139,6 +139,7 @@ equ -> Compares the top 2 values (comsuming them) on the stack and stores the re
     -> Might raise 'EXCEPTION_STACK_UNDERFLOW'.
 
 jif -> Jumps to the addr in the argument if the value on top of the stack is different from 0.
+       -> Always decrements the stack pointer by 1.
        -> The argument must be of type Int as there is no explicit way to pass a Ptr as argument.
        -> The value, to be checked, on the stack must also be of type Int.
     -> Does not touch any memory apart from the stack itself.
