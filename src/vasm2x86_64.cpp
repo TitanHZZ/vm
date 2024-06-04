@@ -125,6 +125,8 @@ int main(int argc, char const *argv[]) {
         case Inst_Type::INST_SAR:
             break;
         case Inst_Type::INST_JMP:
+            std::cout << "    ; jmp " << jmp_addr_label_names.at(inst.operand.as_ptr()) << std::endl;
+            std::cout << "jmp label_1" << std::endl << std::endl;
             break;
         case Inst_Type::INST_EQU:
             std::cout << "    ; equ" << std::endl;

@@ -118,6 +118,9 @@ label_1:
     sub rdi, 8
     call Nan_Box_print
 
+    ; jmp label_1
+jmp label_1
+
 label_0:
     ; exit
     mov rax, SYS_EXIT
