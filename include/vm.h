@@ -14,6 +14,7 @@
     (size == 32 ? (int64_t)(int32_t)(value) : (int64_t)(value))))
 
 #define STACK_CAP 1024
+#define WORD_SIZE sizeof(Nan_Box) // used just in the x86_64 code generator
 #define DEFAULT_STATIC_MEM_CAP 300
 #define EXECUTION_LIMIT 10000
 

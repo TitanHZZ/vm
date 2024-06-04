@@ -1,3 +1,6 @@
 .vscode/
 build/
 *.vm
+*.o
+gen
+template

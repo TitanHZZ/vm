@@ -3,6 +3,7 @@ file(GLOB examples_src "${CMAKE_SOURCE_DIR}/examples/*.vasm")
 
 # the expected output of each example are in order with the '*.vasm' files in the examples directory
 set(examples_outputs
+    "60" # 123i.vasm
     "4\n-5\n-1\n0\n5\n5\n13\n0\n140737488355327" # bitwise.vasm
     "10.6\n10\n0xa\n10" # casts.vasm
     "2.71828" # e.vasm

@@ -1,0 +1,7 @@
+# simple program to test the asm generation
+    push 10
+    push 20
+    push 30
+    add
+    add
+    print 0
