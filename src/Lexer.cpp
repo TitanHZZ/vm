@@ -2,6 +2,7 @@
 #include <vector>
 #include <fstream>
 #include <functional>
+#include <string>
 
 #include "cout_colors.h"
 
@@ -50,11 +51,13 @@ public:
             exit(1);
         }
 
-        size_t pos_start = pos;
+        size_t pos_start = 1;
         size_t line_number = 1;
         while (std::getline(file, line)) {
             pos = 0;
             while (pos < line.size()) {
+                pos_start = pos + 1;
+
                 if (std::isspace(line[pos])) {
                     // handle spaces
                     pos++;
@@ -76,8 +79,9 @@ public:
 
                 } else if (std::isalpha(line[pos])) {
                     // handle instructions and labels
-                    const std::string word = read_while([](char c) { return std::isalnum(c) || c == ':'; });
+                    std::string word = read_while([](char c) { return std::isalnum(c) || c == ':'; });
                     if (word.back() == ':') {
+                        word.pop_back();
                         tokens.push_back({LABEL, std::move(word), line_number, pos_start});
                     } else {
                         tokens.push_back({KEYWORD, std::move(word), line_number, pos_start});
@@ -92,7 +96,6 @@ public:
             }
 
             line_number++;
-            pos_start = pos;
         }
 
         return tokens;
@@ -138,7 +141,10 @@ private:
 int main() {
     Lexer lexer("./examples/e.vasm");
     lexer.tokenize();
-    lexer.print_errors();
+
+    if (lexer.print_errors() != 0)
+        return 1;
+
     lexer.print_tokens();
 
     return 0;

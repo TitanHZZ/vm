@@ -19,7 +19,7 @@
 void setConsoleColor(int color) {
     #ifdef _WIN32
         HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(hConsole, color);
+        SetConsoleTextAttribute(hConsole, static_cast<WORD>(color));
     #else
         std::cout << "\033[" << color << "m";
     #endif
