@@ -33,12 +33,16 @@ public:
             if (token.type == Token_Type::UNKNOWN) {
                 setConsoleColor(RED); std::cerr << "ERROR: "; resetConsoleColor();
                 setConsoleColor(YELLOW); std::cerr << path << ":" << token.line_number << ":" << token.line_offset; resetConsoleColor();
-                std::cerr << ": Unrecognizable token \"" << token.value << "\"." << std::endl;
+                std::cerr << ": Unrecognizable token ";
+                setConsoleColor(BG_BLACK); std::cout << token.value; resetConsoleColor();
+                std::cout << "." << std::endl;
                 e++;
             } else if (token.broken) {
                 setConsoleColor(RED); std::cerr << "ERROR: "; resetConsoleColor();
                 setConsoleColor(YELLOW); std::cerr << path << ":" << token.line_number << ":" << token.line_offset; resetConsoleColor();
-                std::cerr << ": Malformed token: \"" << token.value << "\" of type \"" << type_as_cstr(token.type) << "\"." << std::endl;
+                std::cerr << ": Malformed token ";
+                setConsoleColor(BG_BLACK); std::cout << token.value; resetConsoleColor();
+                std::cout << " of type " << type_as_cstr(token.type) << "." << std::endl;
                 e++;
             }
         }
@@ -48,7 +52,7 @@ public:
 
     void print_tokens() {
         for (Token &token: tokens) {
-            std::cout << std::setw(13) << std::left << type_as_cstr(token.type);
+            setConsoleColor(YELLOW); std::cout << std::setw(13) << std::left << type_as_cstr(token.type); resetConsoleColor();
             std::cout << "\t" << token.value << std::endl;
         }
     }
@@ -219,7 +223,7 @@ private:
 };
 
 int main() {
-    Lexer lexer("./examples/stdlib.hasm");
+    Lexer lexer("./examples/hello_world.vasm");
     lexer.tokenize();
 
     if (lexer.print_errors() != 0)

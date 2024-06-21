@@ -6,15 +6,17 @@
 #endif
 
 #ifdef _WIN32
-    #define RED     12
-    #define GREEN   10
-    #define BLUE    9
-    #define YELLOW  14
+    #define RED         12
+    #define GREEN       10
+    #define BLUE        9
+    #define YELLOW      14
+    #define BG_BLACK    12
 #else
-    #define RED     31
-    #define GREEN   32
-    #define BLUE    34
-    #define YELLOW  33
+    #define RED         31
+    #define GREEN       32
+    #define BLUE        34
+    #define YELLOW      33
+    #define BG_BLACK    40
 #endif
 
 void setConsoleColor(int color) {
