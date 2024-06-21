@@ -118,6 +118,18 @@ static const char *inst_type_as_cstr(const Inst_Type& inst) {
     }
 }
 
+static bool str_is_inst(const std::string &str) USED_FUNCTION;
+static bool str_is_inst(const std::string &str) {
+    for (int inst_to_check = 0; inst_to_check < Inst_Type::INST_COUNT; inst_to_check++) {
+        // compare the strings
+        if (!str.compare(inst_type_as_cstr((Inst_Type)inst_to_check))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static inline bool inst_requires_operand(const Inst_Type& inst) {
     return inst == INST_PUSH || inst == INST_JMP    || inst == INST_JMP_IF || inst == INST_DUP  || inst == INST_SWAP  ||
            inst == INST_CALL || inst == INST_NATIVE || inst == INST_PRINT  || inst == INST_READ || inst == INST_WRITE ||
