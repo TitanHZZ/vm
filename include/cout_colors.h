@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 
 #ifdef _WIN32

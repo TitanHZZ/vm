@@ -93,9 +93,9 @@ public:
                     const std::string number = read_while([](char c) { return (c >= 48 && c <= 57) || c == '.' || c == ',' || c == '-' || c == 'e'; });
                     tokens.push_back({Token_Type::NUMBER, std::move(number), line_number, pos_start, false});
 
-                } else if (std::isalpha(line[pos])) {
+                } else if (std::isalpha(line[pos]) || line[pos] == '_') {
                     // handle instructions and labels
-                    std::string word = read_while([](char c) { return std::isalnum(c) || c == ':'; });
+                    std::string word = read_while([](char c) { return std::isalnum(c) || c == '_' || c == ':'; });
                     if (word.back() == ':') {
                         word.pop_back();
                         tokens.push_back({LABEL, std::move(word), line_number, pos_start, false});
@@ -129,6 +129,7 @@ private:
     }
 
     std::string read_string(bool &broken) {
+        const size_t start = pos;
         pos++; // ignore the '"'
         std::string str; // result string
 
@@ -161,8 +162,15 @@ private:
                     str += line[pos];
                     break;
                 }
+
+                if (pos == line.size() - 1) {
+                    // handle unclosed string with escaping char at the end
+                    str = line.substr(start, line.size() - 1);
+                    broken = true;
+                }
             } else if (pos == line.size() - 1) {
                 // handle unclosed string
+                str += line[pos];
                 str.insert(0, "\"");
                 broken = true;
             } else {
@@ -211,7 +219,7 @@ private:
 };
 
 int main() {
-    Lexer lexer("./examples/funcs.vasm");
+    Lexer lexer("./examples/stdlib.hasm");
     lexer.tokenize();
 
     if (lexer.print_errors() != 0)
