@@ -35,14 +35,14 @@ public:
                 setConsoleColor(RED); std::cerr << "ERROR: "; resetConsoleColor();
                 setConsoleColor(YELLOW); std::cerr << path << ":" << token.line_number << ":" << token.line_offset; resetConsoleColor();
                 std::cerr << ": Unrecognizable token ";
-                setConsoleColor(BG_BLACK); std::cout << token.value; resetConsoleColor();
+                setConsoleColor(BG_BLUE); std::cout << token.value; resetConsoleColor();
                 std::cout << "." << std::endl;
                 e++;
             } else if (token.broken) {
                 setConsoleColor(RED); std::cerr << "ERROR: "; resetConsoleColor();
                 setConsoleColor(YELLOW); std::cerr << path << ":" << token.line_number << ":" << token.line_offset; resetConsoleColor();
                 std::cerr << ": Malformed token ";
-                setConsoleColor(BG_BLACK); std::cout << token.value; resetConsoleColor();
+                setConsoleColor(BG_BLUE); std::cout << token.value; resetConsoleColor();
                 std::cout << " of type " << type_as_cstr(token.type) << "." << std::endl;
                 e++;
             }
