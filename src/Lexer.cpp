@@ -5,14 +5,15 @@
 #include <string>
 #include <iomanip>
 
-#include "cout_colors.h"
+// the order of this headers is mandatory as something from the Windows API (from cout_colors.h) is conflicting with our names
 #include "inst.h"
+#include "cout_colors.h"
 
-enum Token_Type {
+typedef enum {
     KEYWORD, INSTRUCTION, NUMBER, LABEL, DIRECTIVE, STRING, UNKNOWN
-};
+} Token_Type;
 
-struct Token {
+typedef struct {
     Token_Type type;
     std::string value;
 
@@ -20,7 +21,7 @@ struct Token {
     size_t line_offset;
 
     bool broken; // true when we know what the token is supposed to be but it's not well formatted
-};
+} Token;
 
 class Lexer {
 public:

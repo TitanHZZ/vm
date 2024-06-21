@@ -1,5 +1,5 @@
 # define all target executables
-set(TARGETS "vasma" "vme" "dvasm" "vasm2x86_64" "Lexer")
+set(TARGETS "vasma" "vme" "dvasm" "vasm2x86_64" "lexer")
 
 # get all source (cpp) files and remove executable specific source files
 file(GLOB src "*.cpp")

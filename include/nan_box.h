@@ -4,12 +4,12 @@
 
 #include "exceptions.h"
 
-typedef enum {
+enum class Nan_Type {
     DOUBLE = 0,
     INT,
     PTR,
     EXCEPTION
-} Nan_Type;
+};
 
 class Nan_Box {
 public:
