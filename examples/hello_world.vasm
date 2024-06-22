@@ -1,6 +1,6 @@
 # classic hello world example
 # using a different file type just to avoid compilation/translation during tests
-%include "../../examples/stdlib.hasm\"
+%include "../../examples/stdlib.hasm"
 %string str "Hello, World!\n"
 %define str_size 14
 
