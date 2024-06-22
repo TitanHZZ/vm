@@ -83,7 +83,7 @@ private:
                 return Nan_Box(static_cast<int64_t>(std::strtoll(tokens[pos].value.c_str(), nullptr, 10)));
 
             case Token_Type::FP:
-                break;
+                return Nan_Box(std::strtod(tokens[pos].value.c_str(), nullptr));
 
             case Token_Type::INSTRUCTION:
             case Token_Type::DIRECTIVE:
@@ -116,7 +116,7 @@ private:
 };
 
 int main() {
-    Lexer lexer("./examples/bitwise.vasm");
+    Lexer lexer("./examples/casts.vasm");
     std::vector<Token> &tokens = lexer.tokenize();
 
     if (lexer.print_errors() != 0)

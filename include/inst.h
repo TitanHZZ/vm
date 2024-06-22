@@ -145,7 +145,7 @@ static Inst_Type str_as_inst(const std::string &str) {
 }
 
 // TODO: explain this array
-static Token_Type inst_acc_tk[][2] = {
+constexpr static Token_Type inst_acc_tk[][2] = {
     [INST_NOP]         = {UNKNOWN, UNKNOWN},
     [INST_EXIT]        = {UNKNOWN, UNKNOWN},
     [INST_PUSH]        = {INTEGER, FP},
@@ -153,9 +153,9 @@ static Token_Type inst_acc_tk[][2] = {
     [INST_SWAP]        = {UNKNOWN, UNKNOWN},
     [INST_DUP]         = {UNKNOWN, UNKNOWN},
     [INST_PRINT]       = {INTEGER, UNKNOWN},
-    [INST_TD]          = {UNKNOWN, UNKNOWN},
-    [INST_TI]          = {UNKNOWN, UNKNOWN},
-    [INST_TP]          = {UNKNOWN, UNKNOWN},
+    [INST_TD]          = {INTEGER, UNKNOWN},
+    [INST_TI]          = {INTEGER, UNKNOWN},
+    [INST_TP]          = {INTEGER, UNKNOWN},
     [INST_ADD]         = {UNKNOWN, UNKNOWN},
     [INST_SUB]         = {UNKNOWN, UNKNOWN},
     [INST_MUL]         = {UNKNOWN, UNKNOWN},

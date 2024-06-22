@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iomanip>
+#include <algorithm>
 
 #include "lexer.h"
 #include "cout_colors.h"
@@ -73,10 +74,11 @@ std::vector<Token> &Lexer::tokenize () {
 
             } else if (std::isdigit(line[pos]) || line[pos] == '-') {
                 // handle numbers
-                const std::string number = read_while([](char c) { return (c >= 48 && c <= 57) || c == '.' || c == ',' || c == '-' || c == 'e'; });
+                std::string number = read_while([](char c) { return (c >= 48 && c <= 57) || c == '.' || c == ',' || c == '-' || c == 'e'; });
 
                 // distinguish between integers and floating point
                 if (number.find('.') != std::string::npos || number.find(',') != std::string::npos || number.find('e') != std::string::npos) {
+                    std::replace(number.begin(), number.end(), ',', '.');
                     tokens.push_back({Token_Type::FP, std::move(number), path, line_number, pos_start, false});
                 } else {
                     tokens.push_back({Token_Type::INTEGER, std::move(number), path, line_number, pos_start, false});
@@ -196,12 +198,3 @@ const char *Lexer::type_as_cstr(Token_Type type) {
         exit(1);
     }
 }
-
-// int main() {
-//     Lexer lexer("./examples/hello_world.vasm");
-//     lexer.tokenize();
-//     if (lexer.print_errors() != 0)
-//         return 1;
-//     lexer.print_tokens();
-//     return 0;
-// }
