@@ -11,13 +11,12 @@
 
 typedef struct {
     void *points_to;
-    uint64_t line_number;
-    std::string file_name;
+    Token *token;
 } Label;
 
 typedef struct {
-    size_t insts_idx;
-    std::string label_name;
+    size_t inst_idx;
+    Token &token;
 } Unresolved_Label;
 
 class Program {

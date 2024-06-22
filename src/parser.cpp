@@ -14,12 +14,13 @@ public:
         while (pos < tokens.size()) {
             switch (tokens[pos].type) {
             case Token_Type::INSTRUCTION:
-                parse_inst();
-                break;
+                parse_inst(); break;
+
+            case Token_Type::LABEL:
+                parse_label(); break;
 
             case Token_Type::DIRECTIVE:
             case Token_Type::KEYWORD:
-            case Token_Type::LABEL:
             case Token_Type::INTEGER:
             case Token_Type::FP:
             case Token_Type::STRING:
@@ -64,6 +65,18 @@ private:
         std::exit(1);
     }
 
+    void parse_label() {
+        // check for duplicate label definition
+        if (labels.contains(tokens[pos].value)) {
+            std::cerr << "ERROR: Label \"" << tokens[pos].value << "\" was redefined." << std::endl;
+            std::cerr << "\tInitially defined at " << labels[tokens[pos].value].token->file_path << ":" << labels[tokens[pos].value].token->line_number << ":" << labels[tokens[pos].value].token->line_offset << "." << std::endl;
+            std::cerr << "\tRedefined at " << tokens[pos].file_path << ":" << tokens[pos].line_number << ":" << tokens[pos].line_offset << "." << std::endl;
+            std::exit(1);
+        }
+
+        labels[tokens[pos].value] = Label {(void *)pos, &tokens[pos]};
+    }
+
     Nan_Box get_curr_tk_value() {
         switch (tokens[pos].type) {
             case Token_Type::INTEGER:
@@ -98,11 +111,12 @@ private:
     std::vector<Token> &tokens;
     size_t pos;
 
-    std::vector<Inst> insts; // TEMPORARY
+    std::vector<Inst> insts;
+    std::unordered_map<std::string_view, Label> labels;
 };
 
 int main() {
-    Lexer lexer("./examples/123i.vasm");
+    Lexer lexer("./examples/bitwise.vasm");
     std::vector<Token> &tokens = lexer.tokenize();
 
     if (lexer.print_errors() != 0)

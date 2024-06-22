@@ -11,6 +11,7 @@ typedef struct {
     Token_Type type;
     std::string value;
 
+    std::string file_path;
     size_t line_number;
     size_t line_offset;
 

@@ -63,13 +63,13 @@ std::vector<Token> &Lexer::tokenize () {
                 // handle preprocessor directives
                 pos++; // ignore the '%'
                 const std::string directive = read_while([](char c) { return !std::isspace(c); });
-                tokens.push_back({Token_Type::DIRECTIVE, std::move(directive), line_number, pos_start, false});
+                tokens.push_back({Token_Type::DIRECTIVE, std::move(directive), path, line_number, pos_start, false});
 
             } else if (line[pos] == '"') {
                 // handle string literals
                 bool broken = false;
                 const std::string str = read_string(broken);
-                tokens.push_back({Token_Type::STRING, std::move(str), line_number, pos_start, broken});
+                tokens.push_back({Token_Type::STRING, std::move(str), path, line_number, pos_start, broken});
 
             } else if (std::isdigit(line[pos]) || line[pos] == '-') {
                 // handle numbers
@@ -77,9 +77,9 @@ std::vector<Token> &Lexer::tokenize () {
 
                 // distinguish between integers and floating point
                 if (number.find('.') != std::string::npos || number.find(',') != std::string::npos || number.find('e') != std::string::npos) {
-                    tokens.push_back({Token_Type::FP, std::move(number), line_number, pos_start, false});
+                    tokens.push_back({Token_Type::FP, std::move(number), path, line_number, pos_start, false});
                 } else {
-                    tokens.push_back({Token_Type::INTEGER, std::move(number), line_number, pos_start, false});
+                    tokens.push_back({Token_Type::INTEGER, std::move(number), path, line_number, pos_start, false});
                 }
 
             } else if (std::isalpha(line[pos]) || line[pos] == '_') {
@@ -87,17 +87,17 @@ std::vector<Token> &Lexer::tokenize () {
                 std::string word = read_while([](char c) { return std::isalnum(c) || c == '_' || c == ':'; });
                 if (word.back() == ':') {
                     word.pop_back();
-                    tokens.push_back({LABEL, std::move(word), line_number, pos_start, false});
+                    tokens.push_back({LABEL, std::move(word), path, line_number, pos_start, false});
                 } else if (str_is_inst(word)) {
-                    tokens.push_back({INSTRUCTION, std::move(word), line_number, pos_start, false});
+                    tokens.push_back({INSTRUCTION, std::move(word), path, line_number, pos_start, false});
                 } else {
-                    tokens.push_back({KEYWORD, std::move(word), line_number, pos_start, false});
+                    tokens.push_back({KEYWORD, std::move(word), path, line_number, pos_start, false});
                 }
 
             } else {
                 // handle unknown tokens
                 const std::string val = read_while([](char c) { return !std::isspace(c); });
-                tokens.push_back({UNKNOWN, std::move(val), line_number, pos_start, false});
+                tokens.push_back({UNKNOWN, std::move(val), path, line_number, pos_start, false});
                 pos++;
             }
         }
@@ -105,6 +105,7 @@ std::vector<Token> &Lexer::tokenize () {
         line_number++;
     }
 
+    file.close();
     return tokens;
 }
 

@@ -80,7 +80,7 @@ void Program::parse_from_file(const char *path) {
 }
 
 void Program::get_label_definition(std::string& line, const char *const path, std::unordered_map<std::string, Label>& labels, const size_t line_count) {
-    // get label and check for spaces (spaces are not allowed in labels)
+    /*// get label and check for spaces (spaces are not allowed in labels)
     string_split_by_delimeter(line, ':', true);
     if (line.find_first_of(' ') != std::string::npos) {
         std::cerr << "ERROR: Label with spaces was defined." << std::endl;
@@ -110,11 +110,11 @@ void Program::get_label_definition(std::string& line, const char *const path, st
         exit(1);
     }
 
-    labels.emplace(std::move(line), Label {.points_to = (void*)insts.size(), .line_number = line_count, .file_name = path});
+    labels.emplace(std::move(line), Label {.points_to = (void*)insts.size(), .line_number = line_count, .file_name = path});*/
 }
 
 void Program::get_preprocessor_directive(std::string& line, const char *const path, std::unordered_map<std::string, Label>& labels, std::unordered_map<std::string, std::string>& preprocessor_defines, const size_t line_count) {
-    string_split_by_delimeter(line, '%', false);
+    /*string_split_by_delimeter(line, '%', false);
     string_trim(line);
 
     const size_t directive_first_space_idx = line.find_first_of(' ');
@@ -260,18 +260,18 @@ void Program::get_preprocessor_directive(std::string& line, const char *const pa
         std::cerr << "ERROR: Unknown preprocessor directive '" << directive_operation << "'." << std::endl;
         std::cerr << "      " << path << ":" << line_count << std::endl;
         exit(1);
-    }
+    }*/
 }
 
 void Program::parse_source_code(const char *path, std::unordered_map<std::string, Label>& labels, std::unordered_map<std::string, std::string>& preprocessor_defines) {
-    std::ifstream file(path, std::ios::in);
+    /*std::ifstream file(path, std::ios::in);
     if (!file.is_open()) {
         std::cerr << "ERROR: An error occured when trying to read a program asm from '" << path << "'." << std::endl;
         exit(1);
     }
 
-    /*// get all the labels and the addrs they point to
-    get_label_definitions(file, path, labels);*/
+    // get all the labels and the addrs they point to
+    // get_label_definitions(file, path, labels);
 
     // keep track of all the instructions that have labels that are not defined when they are referenced in the source code
     std::vector<Unresolved_Label> insts_with_undefined_labels;
@@ -303,15 +303,15 @@ void Program::parse_source_code(const char *path, std::unordered_map<std::string
             continue;
         }
 
-        /*// this makes sure that the preprocessor defines are applied
-        for (auto& it: preprocessor_defines) {
-            // make sure only one preprocessor define is applied per line
-            // this should avoid problems with defines that are substrings of other defines
-            if (line.find(it.first) != std::string::npos) {
-                line.replace(line.find(it.first), it.first.size(), it.second);
-                break;
-            }
-        }*/
+        // this makes sure that the preprocessor defines are applied
+        // for (auto& it: preprocessor_defines) {
+        //     // make sure only one preprocessor define is applied per line
+        //     // this should avoid problems with defines that are substrings of other defines
+        //     if (line.find(it.first) != std::string::npos) {
+        //         line.replace(line.find(it.first), it.first.size(), it.second);
+        //         break;
+        //     }
+        // }
 
         std::string operand = "";
         std::string instruction = "";
@@ -410,15 +410,15 @@ void Program::parse_source_code(const char *path, std::unordered_map<std::string
                             exit(1);
                         }
                     }
-                    /*// WARNING: this assumes that any instrcution that does not accept a label or a floating point number, also, does not accept negative numbers
-                    // maybe this should be changed in the future
-                    } else if (std::all_of(operand.begin(), operand.end(), ::isdigit)) {
-                        // convert operand to int
-                        new_inst.operand = Nan_Box(std::stol(operand));
-                    } else {
-                        std::cerr << "ERROR: Invalid operand '" << operand << "' at line " << line_count << "." << std::endl;
-                        exit(1);
-                    }*/
+                    // // WARNING: this assumes that any instrcution that does not accept a label or a floating point number, also, does not accept negative numbers
+                    // // maybe this should be changed in the future
+                    // } else if (std::all_of(operand.begin(), operand.end(), ::isdigit)) {
+                    //     // convert operand to int
+                    //     new_inst.operand = Nan_Box(std::stol(operand));
+                    // } else {
+                    //     std::cerr << "ERROR: Invalid operand '" << operand << "' at line " << line_count << "." << std::endl;
+                    //     exit(1);
+                    // }
                 } else {
                     std::cerr << "ERROR: An error occured when parsing asm file:" << std::endl;
                     std::cerr << "      Instruction '" << inst_type_as_cstr((Inst_Type)inst_to_check) << "' requires an operand." << std::endl;
@@ -461,7 +461,7 @@ void Program::parse_source_code(const char *path, std::unordered_map<std::string
         }
     }
 
-    file.close();
+    file.close();*/
 }
 
 void Program::print_program(bool with_labels) {
