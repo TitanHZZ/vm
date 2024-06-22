@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "nan_box.h"
+#include "lexer.h"
 
 typedef int64_t Word;
 typedef enum {
@@ -130,11 +131,66 @@ static bool str_is_inst(const std::string &str) {
     return false;
 }
 
-static inline bool inst_requires_operand(const Inst_Type& inst) {
-    return inst == INST_PUSH || inst == INST_JMP    || inst == INST_JMP_IF || inst == INST_DUP  || inst == INST_SWAP  ||
-           inst == INST_CALL || inst == INST_NATIVE || inst == INST_PRINT  || inst == INST_READ || inst == INST_WRITE ||
-           inst == INST_TD   || inst == INST_TI     || inst == INST_TP;
+static Inst_Type str_as_inst(const std::string &str) USED_FUNCTION;
+static Inst_Type str_as_inst(const std::string &str) {
+    for (int inst_to_check = 0; inst_to_check < Inst_Type::INST_COUNT; inst_to_check++) {
+        // compare the strings
+        if (!str.compare(inst_type_as_cstr((Inst_Type)inst_to_check))) {
+            return (Inst_Type) inst_to_check;
+        }
+    }
+
+    // should never happen
+    return INST_NOP;
 }
+
+// TODO: explain this array
+static Token_Type inst_acc_tk[][2] = {
+    [INST_NOP]         = {UNKNOWN, UNKNOWN},
+    [INST_EXIT]        = {UNKNOWN, UNKNOWN},
+    [INST_PUSH]        = {INTEGER, FP},
+    [INST_POP]         = {UNKNOWN, UNKNOWN},
+    [INST_SWAP]        = {UNKNOWN, UNKNOWN},
+    [INST_DUP]         = {UNKNOWN, UNKNOWN},
+    [INST_PRINT]       = {INTEGER, UNKNOWN},
+    [INST_TD]          = {UNKNOWN, UNKNOWN},
+    [INST_TI]          = {UNKNOWN, UNKNOWN},
+    [INST_TP]          = {UNKNOWN, UNKNOWN},
+    [INST_ADD]         = {UNKNOWN, UNKNOWN},
+    [INST_SUB]         = {UNKNOWN, UNKNOWN},
+    [INST_MUL]         = {UNKNOWN, UNKNOWN},
+    [INST_DIV]         = {UNKNOWN, UNKNOWN},
+    [INST_MOD]         = {UNKNOWN, UNKNOWN},
+    [INST_AND]         = {UNKNOWN, UNKNOWN},
+    [INST_OR]          = {UNKNOWN, UNKNOWN},
+    [INST_XOR]         = {UNKNOWN, UNKNOWN},
+    [INST_NOT]         = {UNKNOWN, UNKNOWN},
+    [INST_NATIVE]      = {UNKNOWN, UNKNOWN},
+    [INST_SHL]         = {UNKNOWN, UNKNOWN},
+    [INST_SHR]         = {UNKNOWN, UNKNOWN},
+    [INST_SAR]         = {UNKNOWN, UNKNOWN},
+    [INST_JMP]         = {UNKNOWN, UNKNOWN},
+    [INST_EQU]         = {UNKNOWN, UNKNOWN},
+    [INST_JMP_IF]      = {UNKNOWN, UNKNOWN},
+    [INST_CALL]        = {UNKNOWN, UNKNOWN},
+    [INST_RET]         = {UNKNOWN, UNKNOWN},
+    [INST_READ]        = {UNKNOWN, UNKNOWN},
+    [INST_WRITE]       = {UNKNOWN, UNKNOWN},
+    [INST_DUMP_STACK]  = {UNKNOWN, UNKNOWN},
+    [INST_DUMP_MEMORY] = {UNKNOWN, UNKNOWN},
+    [INST_HALT]        = {UNKNOWN, UNKNOWN},
+    [INST_COUNT]       = {UNKNOWN, UNKNOWN}
+};
+
+static inline bool inst_requires_operand(const Inst_Type inst) {
+    return inst_acc_tk[inst][0] != Token_Type::UNKNOWN;
+}
+
+// static inline bool inst_requires_operand(const Inst_Type& inst) {
+//     return inst == INST_PUSH || inst == INST_JMP    || inst == INST_JMP_IF || inst == INST_DUP  || inst == INST_SWAP  ||
+//            inst == INST_CALL || inst == INST_NATIVE || inst == INST_PRINT  || inst == INST_READ || inst == INST_WRITE ||
+//            inst == INST_TD   || inst == INST_TI     || inst == INST_TP;
+// }
 
 static inline bool inst_operand_might_be_label(const Inst_Type& inst) {
     return inst == INST_JMP || inst == INST_JMP_IF || inst == INST_CALL;
@@ -150,9 +206,8 @@ static inline bool inst_accepts_fp_operand(const Inst_Type& inst) {
 
 /*static inline bool inst_operand_cannot_be_negative(const Inst_Type& inst) {
     return inst == INST_JMP || inst == INST_JMP_IF;
-}*/
-
-/*#define MAKE_INST_NOP()         (Inst) {.type = Inst_Type::INST_NOP, .operand = 0}
+}
+#define MAKE_INST_NOP()         (Inst) {.type = Inst_Type::INST_NOP, .operand = 0}
 #define MAKE_INST_HALT()        (Inst) {.type = Inst_Type::INST_HALT, .operand = 0}
 #define MAKE_INST_EXIT()        (Inst) {.type = Inst_Type::INST_EXIT, .operand = 0}
 #define MAKE_INST_PUSH(val)     (Inst) {.type = Inst_Type::INST_PUSH, .operand = val}
