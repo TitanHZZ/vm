@@ -5,9 +5,8 @@
 #include <string>
 #include <iomanip>
 
-// the order of this headers is mandatory as something from the Windows API (from cout_colors.h) is conflicting with our names
-#include "inst.h"
 #include "cout_colors.h"
+#include "inst.h"
 
 typedef enum {
     KEYWORD, INSTRUCTION, NUMBER, LABEL, DIRECTIVE, STRING, UNKNOWN

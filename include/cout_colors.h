@@ -2,7 +2,9 @@
 #include <iostream>
 
 #ifdef _WIN32
+    #define WIN32_LEAN_AND_MEAN // include less WinAPI stuff
     #include <windows.h>
+    #undef EXCEPTION_STACK_OVERFLOW // 'EXCEPTION_STACK_OVERFLOW' is a WinAPI macro and also a variant in the 'Exception_Type' enum
 #endif
 
 #ifdef _WIN32
