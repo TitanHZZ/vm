@@ -16,7 +16,7 @@ typedef struct {
 
 typedef struct {
     size_t inst_idx;
-    Token &token;
+    const Token &token;
 } Unresolved_Label;
 
 class Program {

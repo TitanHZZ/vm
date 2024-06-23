@@ -4,7 +4,14 @@
 #include <functional>
 
 typedef enum {
-    KEYWORD, INSTRUCTION, INTEGER, FP, LABEL, DIRECTIVE, STRING, UNKNOWN
+    KEYWORD = 0,
+    INSTRUCTION,
+    INTEGER,
+    FP,
+    LABEL,
+    DIRECTIVE,
+    STRING,
+    UNKNOWN
 } Token_Type;
 
 typedef struct {

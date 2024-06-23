@@ -131,7 +131,7 @@ std::string Lexer::read_string(bool &broken) {
             switch (line[pos]) {
             case 'n':
                 str += '\n'; break;
-            
+
             case 't':
                 str += '\t'; break;
 
