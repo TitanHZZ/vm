@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <unordered_set>
 
 #include "lexer.h"
 #include "inst.h"
@@ -9,7 +10,16 @@
 
 class Parser {
 public:
-    Parser(std::vector<Token> &tokens, Parser *parent = nullptr) : pos(0), tokens(tokens), parent(parent) {}
+    Parser(std::vector<Token> &tokens, Parser *parent = nullptr) : pos(0), tokens(tokens), parent(parent) {
+        // save the file path of the current file
+        if (tokens.size() > 0) {
+            if (parent == nullptr) {
+                includes.insert(tokens[0].file_path);
+            } else {
+                parent->includes.insert(tokens[0].file_path);
+            }
+        }
+    }
 
     std::vector<Inst> &parse() {
         while (pos < tokens.size()) {
@@ -105,6 +115,14 @@ private:
 
             if (lexer.get_error_count(true) != 0)
                 std::exit(1);
+
+            if (new_tokens.size() > 0) {
+                if ((parent != nullptr && parent->includes.find(new_tokens[0].file_path) != includes.end() ) || includes.find(new_tokens[0].file_path) != includes.end()) {
+                    // file was already included
+                    std::cerr << "ERROR: Circular file inclusion detected. The file \"" << new_tokens[0].file_path << "\" was included more than once." << std::endl;
+                    std::exit(1);
+                }
+            }
 
             Parser parser(new_tokens, this);
             parser.parse();
@@ -217,6 +235,9 @@ private:
     std::vector<Unresolved_Label> unresolved_labels;
     std::unordered_map<std::string, Token> alias;
     std::unordered_map<std::string, Label> labels;
+
+    // used to stores the names for the included files to avoid circular file inclusion
+    std::unordered_set<std::string> includes;
 
     Parser *parent;
 };
