@@ -124,7 +124,7 @@ private:
                 }
             }
 
-            Parser parser(new_tokens, this);
+            Parser parser(new_tokens, parent == nullptr ? this : parent);
             parser.parse();
 
         } else {
