@@ -37,6 +37,16 @@ public:
             pos++;
         }
 
+        // second pass to resolve the remaining labels
+        for (Unresolved_Label &ul: unresolved_labels) {
+            if (!labels.contains(ul.token.value)) {
+                std::cerr << "ERROR: " << ul.token.file_path << ":" << ul.token.line_number << ":" << ul.token.line_offset << ": Unresolved label \"" << ul.token.value << "\"." << std::endl;
+                std::exit(1);
+            }
+
+            insts[ul.inst_idx].operand.box_ptr(labels[ul.token.value].points_to);
+        }
+
         return insts;
     }
 
@@ -62,7 +72,7 @@ private:
             std::exit(1);
         }
 
-        labels[tokens[pos].value] = Label {(void *)pos, &tokens[pos]};
+        labels[tokens[pos].value] = Label {(void *)insts.size(), &tokens[pos]};
     }
 
     void parse_directive() {
@@ -96,15 +106,12 @@ private:
                 if (alias.contains(token.value)) {
                     return token_as_Nan_Box(alias[token.value]);
                 } else if (labels.contains(token.value)) {
-                    return token_as_Nan_Box(*labels[token.value].token);
+                    return Nan_Box(labels[token.value].points_to);
                 } else {
-                    unresolved_labels.push_back(Unresolved_Label {pos, token});
+                    unresolved_labels.push_back(Unresolved_Label {insts.size(), token});
                 }
 
-                // if (!alias.contains(token.value)) {
-                //     std::cerr << "ERROR: " << token.file_path << ":" << token.line_number << ":" << token.line_offset << ": Keyword not yet defined." << std::endl;
-                //     std::exit(1);
-                // }
+                return Nan_Box();
 
             case Token_Type::INSTRUCTION:
             case Token_Type::DIRECTIVE:
@@ -126,9 +133,31 @@ private:
         }
 
         pos++;
+        bool got_keyword = false;
         for (size_t i = 0; i < acc_types_size && acc_types[i] != Token_Type::UNKNOWN; i++) {
             if (acc_types[i] == tokens[pos].type) {
-                // we got our value with a desired type
+                /*
+                 When we have a keyword as the next token, if it is an alias,
+                 we need to check if the value is valid in the context of the current instruction/operation.
+                 */
+                if (acc_types[i] == Token_Type::KEYWORD && alias.contains(tokens[pos].value)) {
+                    for (size_t j = 0; j < acc_types_size && acc_types[j] != Token_Type::UNKNOWN; j++) {
+                        if (acc_types[j] == alias[tokens[pos].value].type) {
+                            return tokens[pos];
+                        }
+                    }
+
+                    // the alias value type is not compatible with the types accepted in the current instruction/operation
+                    std::cerr << "ERROR: " << tokens[pos].file_path << ":" << tokens[pos].line_number << ":" << tokens[pos].line_offset << ": KEYWORD as an invalid token type of " << Lexer::type_as_cstr(alias[tokens[pos].value].type) << ".";
+                    std::cerr << " Expected KEYWORD with one of this types:";
+                    for (size_t i = 0; i < acc_types_size && acc_types[i] != Token_Type::UNKNOWN; i++) {
+                        if (acc_types[i] != Token_Type::KEYWORD)
+                            std::cerr << " " << Lexer::type_as_cstr(acc_types[i]);
+                    }
+                    std::cerr << std::endl;
+                    std::exit(1);
+                }
+
                 return tokens[pos];
             }
         }
@@ -153,7 +182,7 @@ private:
 };
 
 int main() {
-    Lexer lexer("./examples/e.vasm");
+    Lexer lexer("./examples/fibonacci.vasm");
     std::vector<Token> &tokens = lexer.tokenize();
 
     if (lexer.print_errors() != 0)
