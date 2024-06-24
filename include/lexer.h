@@ -29,7 +29,7 @@ class Lexer {
 public:
     Lexer(const char *path) : path(path) {}
 
-    int print_errors();
+    int get_error_count(bool print_errors);
     void print_tokens();
     static const char *type_as_cstr(Token_Type type);
 

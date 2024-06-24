@@ -9,9 +9,9 @@
 
 class Parser {
 public:
-    Parser(std::vector<Token> &tokens) : tokens(tokens), pos(0) {}
+    Parser(std::vector<Token> &tokens, Parser *parent = nullptr) : pos(0), tokens(tokens), parent(parent) {}
 
-    std::vector<Inst> parse() {
+    std::vector<Inst> &parse() {
         while (pos < tokens.size()) {
             switch (tokens[pos].type) {
             case Token_Type::INSTRUCTION:
@@ -55,12 +55,12 @@ private:
         const Inst_Type inst_type = str_as_inst(tokens[pos].value);
 
         if (!inst_requires_operand(inst_type)) {
-            insts.push_back({inst_type, Nan_Box()});
+            add_inst(Inst {inst_type, Nan_Box()});
             return;
         }
 
         const Token &operand = next(inst_acc_tk[inst_type], sizeof(inst_acc_tk[0]) / sizeof(inst_acc_tk[0][0]));
-        insts.push_back({inst_type, token_as_Nan_Box(operand)});
+        add_inst(Inst {inst_type, token_as_Nan_Box(operand)});
     }
 
     void parse_label() {
@@ -72,12 +72,16 @@ private:
             std::exit(1);
         }
 
-        labels[tokens[pos].value] = Label {(void *)insts.size(), &tokens[pos]};
+        if (parent == nullptr) {
+            labels[tokens[pos].value] = Label {(void *)insts.size(), &tokens[pos]};
+        } else {
+            parent->labels[tokens[pos].value] = Label {(void *)parent->insts.size(), &tokens[pos]};
+        }
     }
 
     void parse_directive() {
         if (tokens[pos].value == "alias") {
-            const Token &name  = next(dir_acc_tk[ALIAS][0], sizeof(dir_acc_tk[ALIAS][0]) / sizeof(dir_acc_tk[ALIAS][0][0]));
+            const Token &name  = next(dir_acc_tk[ALIAS][0], sizeof(dir_acc_tk[ALIAS][0]) / sizeof(dir_acc_tk[ALIAS][0][0]), true);
             const Token &value = next(dir_acc_tk[ALIAS][1], sizeof(dir_acc_tk[ALIAS][1]) / sizeof(dir_acc_tk[ALIAS][1][0]));
 
             if (alias.contains(name.value)) {
@@ -87,7 +91,24 @@ private:
                 std::exit(1);
             }
 
-            alias[name.value] = value;
+            if (parent == nullptr) {
+                alias[name.value] = value;
+            } else {
+                parent->alias[name.value] = value;
+            }
+
+        } else if (tokens[pos].value == "include") {
+            const Token &include_path = next(dir_acc_tk[INCLUDE][0], sizeof(dir_acc_tk[INCLUDE][0]) / sizeof(dir_acc_tk[INCLUDE][0][0]));
+
+            Lexer lexer(include_path.value.c_str());
+            std::vector<Token> &new_tokens = lexer.tokenize();
+
+            if (lexer.get_error_count(true) != 0)
+                std::exit(1);
+
+            Parser parser(new_tokens, this);
+            parser.parse();
+
         } else {
             std::cerr << "ERROR: Unimplemented directive." << std::endl;
             std::exit(1);
@@ -126,21 +147,26 @@ private:
         std::exit(1);
     }
 
-    const Token &next(const Token_Type acc_types[], size_t acc_types_size) {
+    const Token &next(const Token_Type acc_types[], size_t acc_types_size, bool ignore_keyword_type_check = false) {
         if (pos == tokens.size() - 1) {
             std::cerr << "ERROR: Expected token but found nothing." << std::endl;
             std::exit(1);
         }
 
         pos++;
-        bool got_keyword = false;
         for (size_t i = 0; i < acc_types_size && acc_types[i] != Token_Type::UNKNOWN; i++) {
             if (acc_types[i] == tokens[pos].type) {
                 /*
                  When we have a keyword as the next token, if it is an alias,
                  we need to check if the value is valid in the context of the current instruction/operation.
+
+                 The 'ignore_keyword_type_check' should be set to 'true' when asking for the next token during an 'alias' directive parsing.
+                 This is the case because the 'recursive' KEYWORD type check should not happen in this case as we are parsing a label definition
+                 for the first time or we have a redefinition, and in that case, 'token_as_Nan_Box' will catch this. This is the same reason the loop
+                 checks if the label already exists, so that 'token_as_Nan_Box' catches the redefinitions as this function should only
+                 get the next token and check if the type is an accepted one by the current instruction/operation.
                  */
-                if (acc_types[i] == Token_Type::KEYWORD && alias.contains(tokens[pos].value)) {
+                if (acc_types[i] == Token_Type::KEYWORD && alias.contains(tokens[pos].value) && !ignore_keyword_type_check) {
                     for (size_t j = 0; j < acc_types_size && acc_types[j] != Token_Type::UNKNOWN; j++) {
                         if (acc_types[j] == alias[tokens[pos].value].type) {
                             return tokens[pos];
@@ -148,7 +174,7 @@ private:
                     }
 
                     // the alias value type is not compatible with the types accepted in the current instruction/operation
-                    std::cerr << "ERROR: " << tokens[pos].file_path << ":" << tokens[pos].line_number << ":" << tokens[pos].line_offset << ": KEYWORD as an invalid token type of " << Lexer::type_as_cstr(alias[tokens[pos].value].type) << ".";
+                    std::cerr << "ERROR: " << tokens[pos].file_path << ":" << tokens[pos].line_number << ":" << tokens[pos].line_offset << ": KEYWORD has an invalid token type of " << Lexer::type_as_cstr(alias[tokens[pos].value].type) << ".";
                     std::cerr << " Expected KEYWORD with one of this types:";
                     for (size_t i = 0; i < acc_types_size && acc_types[i] != Token_Type::UNKNOWN; i++) {
                         if (acc_types[i] != Token_Type::KEYWORD)
@@ -172,26 +198,38 @@ private:
         std::exit(1);
     }
 
-    std::vector<Token> &tokens;
-    size_t pos;
+    inline void add_inst(Inst inst) {
+        if (parent == nullptr) {
+            insts.push_back(inst);
+        } else {
+            parent->insts.push_back(inst);
+        }
+    }
 
+    size_t pos;
+    std::vector<Token> &tokens;
+
+    /*
+     This data structures **need** to own the data as the Lexers and Parsers get destroyed in the recursive process
+     of the 'include' directive. In the end, the first created Lexer and Parser, both need to have access to valid data.
+     */
     std::vector<Inst> insts;
     std::vector<Unresolved_Label> unresolved_labels;
-    std::unordered_map<std::string_view, Token> alias;
-    std::unordered_map<std::string_view, Label> labels;
+    std::unordered_map<std::string, Token> alias;
+    std::unordered_map<std::string, Label> labels;
+
+    Parser *parent;
 };
 
 int main() {
-    Lexer lexer("./examples/fibonacci.vasm");
+    Lexer lexer("../../examples/funcs.vasm");
     std::vector<Token> &tokens = lexer.tokenize();
 
-    if (lexer.print_errors() != 0)
+    if (lexer.get_error_count(true) != 0)
         return 1;
 
-    // lexer.print_tokens();
-
     Parser parser(tokens);
-    std::vector<Inst> insts = parser.parse();
+    std::vector<Inst> &insts = parser.parse();
 
     Program p;
     p.insts = insts;

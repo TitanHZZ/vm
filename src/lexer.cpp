@@ -6,18 +6,18 @@
 #include "cout_colors.h"
 #include "inst.h"
 
-int Lexer::print_errors() {
+int Lexer::get_error_count(bool print_errors) {
     int e = 0;
 
     for (Token &token: tokens) {
-        if (token.type == Token_Type::UNKNOWN) {
+        if (token.type == Token_Type::UNKNOWN && print_errors) {
             setConsoleColor(RED); std::cerr << "ERROR: "; resetConsoleColor();
             setConsoleColor(YELLOW); std::cerr << path << ":" << token.line_number << ":" << token.line_offset; resetConsoleColor();
             std::cerr << ": Unrecognizable token ";
             setConsoleColor(BG_BLUE); std::cout << token.value; resetConsoleColor();
             std::cout << "." << std::endl;
             e++;
-        } else if (token.broken) {
+        } else if (token.broken && print_errors) {
             setConsoleColor(RED); std::cerr << "ERROR: "; resetConsoleColor();
             setConsoleColor(YELLOW); std::cerr << path << ":" << token.line_number << ":" << token.line_offset; resetConsoleColor();
             std::cerr << ": Malformed token ";

@@ -15,7 +15,7 @@ constexpr static Token_Type dir_acc_tk[][2][2] = {
         {INTEGER, FP}
     },
     [INCLUDE] = {
-        {UNKNOWN, UNKNOWN},
+        {STRING,  UNKNOWN},
         {UNKNOWN, UNKNOWN}
     },
     [RES]     = {

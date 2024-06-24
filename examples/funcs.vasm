@@ -6,7 +6,7 @@
     jmp main
 
 %include "../../examples/sin.hasm" # labels are global (cannot be repeated in different files)
-%define N 13 # degrees
+%alias N 13 # degrees
 
 main:
     push N
