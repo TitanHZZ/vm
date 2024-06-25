@@ -1,18 +1,13 @@
 #pragma once
-#include <iostream>
 #include <vector>
 #include <fstream>
-#include <string>
-#include <cstring>
-#include <algorithm>
-#include <unordered_map>
 
 #include "inst.h"
 
 class Program {
 public:
-    Program() {}
     Program(const Inst *list, const size_t count);
+    Program() {}
     ~Program() {}
 
     static void write_to_file(const char *path, const Inst *program, const size_t program_size);
