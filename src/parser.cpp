@@ -32,7 +32,7 @@ public:
             Includes.insert(tokens[0].file_path);
     }
 
-    std::vector<Inst> &parse() {
+    void parse(Program *p = nullptr) {
         while (pos < tokens.size()) {
             switch (tokens[pos].type) {
             case Token_Type::INSTRUCTION:
@@ -58,8 +58,8 @@ public:
             pos++;
         }
 
-        // second pass to resolve the remaining labels
         if (parent == nullptr) {
+            // second pass to resolve the remaining labels
             for (Unresolved_Label &ul: unresolved_labels) {
                 if (!labels.contains(ul.token.value)) {
                     std::cerr << "ERROR: " << ul.token.file_path << ":" << ul.token.line_number << ":" << ul.token.line_offset << ": Unresolved label \"" << ul.token.value << "\"." << std::endl;
@@ -68,9 +68,11 @@ public:
 
                 insts[ul.inst_idx].operand.box_ptr(labels[ul.token.value].points_to);
             }
-        }
 
-        return insts;
+            // move all the data to the program
+            p->insts  = std::move(insts);
+            p->memory = std::move(memory);
+        }
     }
 
 private:
@@ -140,8 +142,17 @@ private:
             const Token &name  = next(dir_acc_tk[STR][0], sizeof(dir_acc_tk[STR][0]) / sizeof(dir_acc_tk[STR][0][0]), true);
             const Token &value = next(dir_acc_tk[STR][1], sizeof(dir_acc_tk[STR][1]) / sizeof(dir_acc_tk[STR][1][0]));
 
-            std::cout << name.value << std::endl;
-            std::cout << value.value << std::endl;
+            // save the addr of the string as an alias
+            Token addr = name;
+            addr.value = std::to_string(memory.size());
+            addr.type = Token_Type::INTEGER;
+            Alias[name.value] = std::move(addr);
+
+            // save the string the the memory
+            memory.reserve(value.value.size());
+            for (const char &c: value.value) {
+                memory.push_back(Nan_Box(static_cast<int64_t>(c)));
+            }
 
             break;
         }
@@ -245,6 +256,7 @@ private:
      of the 'include' directive. In the end, the first created Lexer and Parser, both need to have access to valid data.
      */
     std::vector<Inst> insts;
+    std::vector<Nan_Box> memory;
     std::vector<Unresolved_Label> unresolved_labels;
     std::unordered_map<std::string, Token> alias;
     std::unordered_map<std::string, Label> labels;
@@ -257,12 +269,10 @@ private:
 };
 
 int main() {
-    Lexer lexer("../../examples/funcs.vasm");
-    Parser parser(lexer.tokenize());
-    std::vector<Inst> &insts = parser.parse();
-
     Program p;
-    p.insts = std::move(insts);
+    Lexer lexer("../../examples/hello_world.vasm");
+    Parser parser(lexer.tokenize());
+    parser.parse(&p);
 
     // p.print_program(true);
 

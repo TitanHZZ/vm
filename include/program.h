@@ -67,6 +67,6 @@ public:
         return ifs;
     }
 
-    std::vector<Nan_Box> memory;
     std::vector<Inst> insts;
+    std::vector<Nan_Box> memory;
 };
