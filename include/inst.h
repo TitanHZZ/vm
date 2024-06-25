@@ -186,24 +186,20 @@ static inline bool inst_requires_operand(const Inst_Type inst) {
     return inst_acc_tk[inst][0] != Token_Type::UNKNOWN;
 }
 
-// static inline bool inst_requires_operand(const Inst_Type& inst) {
-//     return inst == INST_PUSH || inst == INST_JMP    || inst == INST_JMP_IF || inst == INST_DUP  || inst == INST_SWAP  ||
-//            inst == INST_CALL || inst == INST_NATIVE || inst == INST_PRINT  || inst == INST_READ || inst == INST_WRITE ||
-//            inst == INST_TD   || inst == INST_TI     || inst == INST_TP;
-// }
-
+/*static inline bool inst_requires_operand(const Inst_Type& inst) {
+    return inst == INST_PUSH || inst == INST_JMP    || inst == INST_JMP_IF || inst == INST_DUP  || inst == INST_SWAP  ||
+           inst == INST_CALL || inst == INST_NATIVE || inst == INST_PRINT  || inst == INST_READ || inst == INST_WRITE ||
+           inst == INST_TD   || inst == INST_TI     || inst == INST_TP;
+}*/
 static inline bool inst_operand_might_be_label(const Inst_Type& inst) {
     return inst == INST_JMP || inst == INST_JMP_IF || inst == INST_CALL;
 }
-
 static inline bool inst_operand_might_be_function(const Inst_Type& inst) {
     return inst == INST_NATIVE;
 }
-
 static inline bool inst_accepts_fp_operand(const Inst_Type& inst) {
     return inst == INST_PUSH;
 }
-
 /*static inline bool inst_operand_cannot_be_negative(const Inst_Type& inst) {
     return inst == INST_JMP || inst == INST_JMP_IF;
 }

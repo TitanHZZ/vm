@@ -46,13 +46,13 @@ void Program::read_from_file(const char *path) {
     file.close();
 }
 
-void Program::string_trim(std::string& str) {
+/*void Program::string_trim(std::string& str) {
     // trim string
     while (str.size() > 0 && str.at(0) == ' ') str.erase(str.begin());      // trim left
     while (str.size() > 0 && str.at(str.size() - 1) == ' ') str.pop_back(); // trim right
-}
+}*/
 
-void Program::string_split_by_delimeter(std::string& line, const char ch, const bool get_first_substring) {
+/*void Program::string_split_by_delimeter(std::string& line, const char ch, const bool get_first_substring) {
     if (line.size() < 1)
         return;
 
@@ -67,9 +67,9 @@ void Program::string_split_by_delimeter(std::string& line, const char ch, const 
     } else {
         line = line.substr(delimeter_index + 1, line.size() - delimeter_index - 1);
     }
-}
+}*/
 
-void Program::parse_from_file(const char *path) {
+/*void Program::parse_from_file(const char *path) {
     // hash table to keep track of all labels in the source code
     std::unordered_map<std::string, Label> labels;
 
@@ -77,10 +77,10 @@ void Program::parse_from_file(const char *path) {
     std::unordered_map<std::string, std::string> preprocessor_defines;
 
     this->parse_source_code(path, labels, preprocessor_defines);
-}
+}*/
 
-void Program::get_label_definition(std::string& line, const char *const path, std::unordered_map<std::string, Label>& labels, const size_t line_count) {
-    /*// get label and check for spaces (spaces are not allowed in labels)
+/*void Program::get_label_definition(std::string& line, const char *const path, std::unordered_map<std::string, Label>& labels, const size_t line_count) {
+    // get label and check for spaces (spaces are not allowed in labels)
     string_split_by_delimeter(line, ':', true);
     if (line.find_first_of(' ') != std::string::npos) {
         std::cerr << "ERROR: Label with spaces was defined." << std::endl;
@@ -110,11 +110,11 @@ void Program::get_label_definition(std::string& line, const char *const path, st
         exit(1);
     }
 
-    labels.emplace(std::move(line), Label {.points_to = (void*)insts.size(), .line_number = line_count, .file_name = path});*/
-}
+    labels.emplace(std::move(line), Label {.points_to = (void*)insts.size(), .line_number = line_count, .file_name = path});
+}*/
 
-void Program::get_preprocessor_directive(std::string& line, const char *const path, std::unordered_map<std::string, Label>& labels, std::unordered_map<std::string, std::string>& preprocessor_defines, const size_t line_count) {
-    /*string_split_by_delimeter(line, '%', false);
+/*void Program::get_preprocessor_directive(std::string& line, const char *const path, std::unordered_map<std::string, Label>& labels, std::unordered_map<std::string, std::string>& preprocessor_defines, const size_t line_count) {
+    string_split_by_delimeter(line, '%', false);
     string_trim(line);
 
     const size_t directive_first_space_idx = line.find_first_of(' ');
@@ -260,11 +260,11 @@ void Program::get_preprocessor_directive(std::string& line, const char *const pa
         std::cerr << "ERROR: Unknown preprocessor directive '" << directive_operation << "'." << std::endl;
         std::cerr << "      " << path << ":" << line_count << std::endl;
         exit(1);
-    }*/
-}
+    }
+}*/
 
-void Program::parse_source_code(const char *path, std::unordered_map<std::string, Label>& labels, std::unordered_map<std::string, std::string>& preprocessor_defines) {
-    /*std::ifstream file(path, std::ios::in);
+/*void Program::parse_source_code(const char *path, std::unordered_map<std::string, Label>& labels, std::unordered_map<std::string, std::string>& preprocessor_defines) {
+    std::ifstream file(path, std::ios::in);
     if (!file.is_open()) {
         std::cerr << "ERROR: An error occured when trying to read a program asm from '" << path << "'." << std::endl;
         exit(1);
@@ -461,8 +461,8 @@ void Program::parse_source_code(const char *path, std::unordered_map<std::string
         }
     }
 
-    file.close();*/
-}
+    file.close();
+}*/
 
 void Program::print_program(bool with_labels) {
     size_t label_suffix = 0;

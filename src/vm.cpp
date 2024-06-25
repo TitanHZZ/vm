@@ -33,9 +33,9 @@ void Vm::execute_program(Program& program) {
 }
 
 void Vm::execute_program(const char *path) {
-    Program program;
-    program.parse_from_file(path);
-    this->execute_program(program);
+    // Program program;
+    // program.parse_from_file(path);
+    // this->execute_program(program);
 }
 
 Exception_Type Vm::execute_instruction(Inst& inst) {

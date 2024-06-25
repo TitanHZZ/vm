@@ -27,9 +27,8 @@ typedef struct {
 
 class Lexer {
 public:
-    Lexer(const char *path) : path(path) {}
+    Lexer(const char *path, bool check_for_errors = true) : path(path), check_for_errors(check_for_errors) {}
 
-    int get_error_count(bool print_errors);
     void print_tokens();
     static const char *type_as_cstr(Token_Type type);
 
@@ -38,10 +37,13 @@ public:
 private:
     std::string read_while(const std::function<bool(char)> &predicate);
     std::string read_string(bool &broken);
+    void get_errors();
 
     const char *path;
     std::string line;
     size_t pos;
 
     std::vector<Token> tokens;
+
+    bool check_for_errors;
 };

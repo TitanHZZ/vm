@@ -32,10 +32,10 @@ int main(int argc, char const *argv[]) {
     size_t label_suffix = 0;
     std::unordered_map<void*, std::string> jmp_addr_label_names;
     for (Inst& inst: p.insts) {
-        if (inst_operand_might_be_label(inst.type) && jmp_addr_label_names.contains(inst.operand.as_ptr()) == false) {
+        /*if (inst_operand_might_be_label(inst.type) && jmp_addr_label_names.contains(inst.operand.as_ptr()) == false) {
             jmp_addr_label_names.emplace(inst.operand.as_ptr(), "label_" + std::to_string(label_suffix));
             label_suffix++;
-        }
+        }*/
     }
 
     std::cout << "BITS 64" << std::endl << std::endl;

@@ -9,37 +9,15 @@
 
 #include "inst.h"
 
-typedef struct {
-    void *points_to;
-    Token *token;
-} Label;
-
-typedef struct {
-    size_t inst_idx;
-    const Token &token;
-} Unresolved_Label;
-
 class Program {
-private:
-    void string_trim(std::string& str);
-    void string_split_by_delimeter(std::string& line, const char ch, const bool get_first_substring);
-    void get_label_definition(std::string& line, const char *const path, std::unordered_map<std::string, Label>& labels, const size_t line_count);
-    void parse_source_code(const char *path, std::unordered_map<std::string, Label>& labels, std::unordered_map<std::string, std::string>& preprocessor_defines);
-    void get_preprocessor_directive(std::string& line, const char *const path, std::unordered_map<std::string, Label>& labels, std::unordered_map<std::string, std::string>& preprocessor_defines, const size_t line_count);
-
 public:
-    std::vector<Inst> insts;
-    std::vector<Nan_Box> memory;
-
     Program() {}
     Program(const Inst *list, const size_t count);
-    // Program(Inst (&&inst_list)[], const size_t count)
     ~Program() {}
 
     static void write_to_file(const char *path, const Inst *program, const size_t program_size);
     void write_to_file(const char *path);
     void read_from_file(const char *path);
-    void parse_from_file(const char *path);
     void print_program(bool with_labels = false);
 
     // basic program serialization
@@ -88,4 +66,7 @@ public:
 
         return ifs;
     }
+
+    std::vector<Nan_Box> memory;
+    std::vector<Inst> insts;
 };

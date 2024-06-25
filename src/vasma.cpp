@@ -33,8 +33,8 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
 
-    Program p;
-    p.parse_from_file(input_file_path.data());
-    p.write_to_file(output_file_path.data());
+    // Program p;
+    // p.parse_from_file(input_file_path.data());
+    // p.write_to_file(output_file_path.data());
     return 0;
 }

@@ -6,28 +6,22 @@
 #include "cout_colors.h"
 #include "inst.h"
 
-int Lexer::get_error_count(bool print_errors) {
-    int e = 0;
-
+void Lexer::get_errors() {
     for (Token &token: tokens) {
-        if (token.type == Token_Type::UNKNOWN && print_errors) {
+        if (token.type == Token_Type::UNKNOWN) {
             setConsoleColor(RED); std::cerr << "ERROR: "; resetConsoleColor();
             setConsoleColor(YELLOW); std::cerr << path << ":" << token.line_number << ":" << token.line_offset; resetConsoleColor();
             std::cerr << ": Unrecognizable token ";
             setConsoleColor(BG_BLUE); std::cout << token.value; resetConsoleColor();
             std::cout << "." << std::endl;
-            e++;
-        } else if (token.broken && print_errors) {
+        } else if (token.broken) {
             setConsoleColor(RED); std::cerr << "ERROR: "; resetConsoleColor();
             setConsoleColor(YELLOW); std::cerr << path << ":" << token.line_number << ":" << token.line_offset; resetConsoleColor();
             std::cerr << ": Malformed token ";
             setConsoleColor(BG_BLUE); std::cout << token.value; resetConsoleColor();
             std::cout << " of type " << Lexer::type_as_cstr(token.type) << "." << std::endl;
-            e++;
         }
     }
-
-    return e;
 }
 
 void Lexer::print_tokens() {
@@ -108,6 +102,9 @@ std::vector<Token> &Lexer::tokenize () {
     }
 
     file.close();
+    if (check_for_errors)
+        get_errors();
+
     return tokens;
 }
 
@@ -171,27 +168,13 @@ std::string Lexer::read_string(bool &broken) {
 
 const char *Lexer::type_as_cstr(Token_Type type) {
     switch (type) {
-    case Token_Type::KEYWORD:
-        return "KEYWORD";
-
-    case Token_Type::INSTRUCTION:
-        return "INSTRUCTION";
-
-    case Token_Type::INTEGER:
-        return "INTEGER";
-
-    case Token_Type::FP:
-        return "FP";
-
-    case Token_Type::LABEL:
-        return "LABEL";
-
-    case Token_Type::DIRECTIVE:
-        return "DIRECTIVE";
-
-    case Token_Type::STRING:
-        return "STRING";
-
+    case Token_Type::KEYWORD:       return "KEYWORD";
+    case Token_Type::INSTRUCTION:   return "INSTRUCTION";
+    case Token_Type::INTEGER:       return "INTEGER";
+    case Token_Type::FP:            return "FP";
+    case Token_Type::LABEL:         return "LABEL";
+    case Token_Type::DIRECTIVE:     return "DIRECTIVE";
+    case Token_Type::STRING:        return "STRING";
     case Token_Type::UNKNOWN:
     default:
         std::cerr << "ERROR: Unknown token type." << std::endl;

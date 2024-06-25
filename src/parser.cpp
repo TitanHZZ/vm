@@ -8,17 +8,28 @@
 #include "vm.h"
 #include "directive.h"
 
+#define Includes  (parent == nullptr ? includes : parent->includes)
+#define Insts     (parent == nullptr ? insts : parent->insts)
+#define Labels    (parent == nullptr ? labels : parent->labels)
+#define UnRLabels (parent == nullptr ? unresolved_labels : parent->unresolved_labels)
+#define Alias     (parent == nullptr ? alias : parent->alias)
+
+typedef struct {
+    void *points_to;
+    Token *token;
+} Label;
+
+typedef struct {
+    size_t inst_idx;
+    const Token &token;
+} Unresolved_Label;
+
 class Parser {
 public:
     Parser(std::vector<Token> &tokens, Parser *parent = nullptr) : pos(0), tokens(tokens), parent(parent) {
         // save the file path of the current file
-        if (tokens.size() > 0) {
-            if (parent == nullptr) {
-                includes.insert(tokens[0].file_path);
-            } else {
-                parent->includes.insert(tokens[0].file_path);
-            }
-        }
+        if (tokens.size() > 0)
+            Includes.insert(tokens[0].file_path);
     }
 
     std::vector<Inst> &parse() {
@@ -48,13 +59,15 @@ public:
         }
 
         // second pass to resolve the remaining labels
-        for (Unresolved_Label &ul: unresolved_labels) {
-            if (!labels.contains(ul.token.value)) {
-                std::cerr << "ERROR: " << ul.token.file_path << ":" << ul.token.line_number << ":" << ul.token.line_offset << ": Unresolved label \"" << ul.token.value << "\"." << std::endl;
-                std::exit(1);
-            }
+        if (parent == nullptr) {
+            for (Unresolved_Label &ul: unresolved_labels) {
+                if (!labels.contains(ul.token.value)) {
+                    std::cerr << "ERROR: " << ul.token.file_path << ":" << ul.token.line_number << ":" << ul.token.line_offset << ": Unresolved label \"" << ul.token.value << "\"." << std::endl;
+                    std::exit(1);
+                }
 
-            insts[ul.inst_idx].operand.box_ptr(labels[ul.token.value].points_to);
+                insts[ul.inst_idx].operand.box_ptr(labels[ul.token.value].points_to);
+            }
         }
 
         return insts;
@@ -65,69 +78,77 @@ private:
         const Inst_Type inst_type = str_as_inst(tokens[pos].value);
 
         if (!inst_requires_operand(inst_type)) {
-            add_inst(Inst {inst_type, Nan_Box()});
+            Insts.push_back(Inst {inst_type, Nan_Box()});
             return;
         }
 
         const Token &operand = next(inst_acc_tk[inst_type], sizeof(inst_acc_tk[0]) / sizeof(inst_acc_tk[0][0]));
-        add_inst(Inst {inst_type, token_as_Nan_Box(operand)});
+        Insts.push_back(Inst {inst_type, token_as_Nan_Box(operand)});
     }
 
     void parse_label() {
         // check for duplicate label definition
-        if (labels.contains(tokens[pos].value)) {
+        if (Labels.contains(tokens[pos].value)) {
+            const Token *const tk = Labels[tokens[pos].value].token;
             std::cerr << "ERROR: Label \"" << tokens[pos].value << "\" was redefined." << std::endl;
-            std::cerr << "\tInitially defined at " << labels[tokens[pos].value].token->file_path << ":" << labels[tokens[pos].value].token->line_number << ":" << labels[tokens[pos].value].token->line_offset << "." << std::endl;
+            std::cerr << "\tInitially defined at " << tk->file_path << ":" << tk->line_number << ":" << tk->line_offset << "." << std::endl;
             std::cerr << "\tRedefined at " << tokens[pos].file_path << ":" << tokens[pos].line_number << ":" << tokens[pos].line_offset << "." << std::endl;
             std::exit(1);
         }
 
-        if (parent == nullptr) {
-            labels[tokens[pos].value] = Label {(void *)insts.size(), &tokens[pos]};
-        } else {
-            parent->labels[tokens[pos].value] = Label {(void *)parent->insts.size(), &tokens[pos]};
-        }
+        const size_t l_size = parent == nullptr ? insts.size() : parent->insts.size();
+        Labels[tokens[pos].value] = Label {(void *)l_size, &tokens[pos]};
     }
 
     void parse_directive() {
-        if (tokens[pos].value == "alias") {
+        switch (str_as_dir(tokens[pos].value)) {
+        case Directive_Type::ALIAS: {
             const Token &name  = next(dir_acc_tk[ALIAS][0], sizeof(dir_acc_tk[ALIAS][0]) / sizeof(dir_acc_tk[ALIAS][0][0]), true);
             const Token &value = next(dir_acc_tk[ALIAS][1], sizeof(dir_acc_tk[ALIAS][1]) / sizeof(dir_acc_tk[ALIAS][1][0]));
 
-            if (alias.contains(name.value)) {
+            if (Alias.contains(name.value)) {
+                const Token &na = Alias[name.value];
                 std::cerr << "ERROR: Alias \"" << name.value << "\" was redefined." << std::endl;
-                std::cerr << "\tInitially defined at " << alias[name.value].file_path << ":" << alias[name.value].line_number << ":" << alias[name.value].line_offset << "." << std::endl;
+                std::cerr << "\tInitially defined at " << na.file_path << ":" << na.line_number << ":" << na.line_offset << "." << std::endl;
                 std::cerr << "\tRedefined at " << value.file_path << ":" << value.line_number << ":" << value.line_offset << "." << std::endl;
                 std::exit(1);
             }
 
-            if (parent == nullptr) {
-                alias[name.value] = value;
-            } else {
-                parent->alias[name.value] = value;
-            }
+            Alias[name.value] = value;
+            break;
+        }
 
-        } else if (tokens[pos].value == "include") {
+        case Directive_Type::INCLUDE: {
             const Token &include_path = next(dir_acc_tk[INCLUDE][0], sizeof(dir_acc_tk[INCLUDE][0]) / sizeof(dir_acc_tk[INCLUDE][0][0]));
 
             Lexer lexer(include_path.value.c_str());
             std::vector<Token> &new_tokens = lexer.tokenize();
 
-            if (lexer.get_error_count(true) != 0)
+            if (new_tokens.size() > 0 && Includes.find(new_tokens[0].file_path) != includes.end()) {
+                // file was already included
+                std::cerr << "ERROR: Circular file inclusion detected. The file \"" << new_tokens[0].file_path << "\" was included more than once." << std::endl;
                 std::exit(1);
-
-            if (new_tokens.size() > 0) {
-                if ((parent != nullptr && parent->includes.find(new_tokens[0].file_path) != includes.end() ) || includes.find(new_tokens[0].file_path) != includes.end()) {
-                    // file was already included
-                    std::cerr << "ERROR: Circular file inclusion detected. The file \"" << new_tokens[0].file_path << "\" was included more than once." << std::endl;
-                    std::exit(1);
-                }
             }
 
             Parser parser(new_tokens, parent == nullptr ? this : parent);
             parser.parse();
 
-        } else {
+            break;
+        }
+
+        case Directive_Type::STR: {
+            const Token &name  = next(dir_acc_tk[STR][0], sizeof(dir_acc_tk[STR][0]) / sizeof(dir_acc_tk[STR][0][0]), true);
+            const Token &value = next(dir_acc_tk[STR][1], sizeof(dir_acc_tk[STR][1]) / sizeof(dir_acc_tk[STR][1][0]));
+
+            std::cout << name.value << std::endl;
+            std::cout << value.value << std::endl;
+
+            break;
+        }
+
+        case Directive_Type::RES:
+        case Directive_Type::COUNT:
+        default:
             std::cerr << "ERROR: Unimplemented directive." << std::endl;
             std::exit(1);
         }
@@ -142,12 +163,12 @@ private:
                 return Nan_Box(std::strtod(token.value.c_str(), nullptr));
 
             case Token_Type::KEYWORD:
-                if (alias.contains(token.value)) {
-                    return token_as_Nan_Box(alias[token.value]);
-                } else if (labels.contains(token.value)) {
-                    return Nan_Box(labels[token.value].points_to);
+                if (Alias.contains(token.value)) {
+                    return token_as_Nan_Box(Alias[token.value]);
+                } else if (Labels.contains(token.value)) {
+                    return Nan_Box(Labels[token.value].points_to);
                 } else {
-                    unresolved_labels.push_back(Unresolved_Label {insts.size(), token});
+                    UnRLabels.push_back(Unresolved_Label {Insts.size(), token});
                 }
 
                 return Nan_Box();
@@ -184,15 +205,15 @@ private:
                  checks if the label already exists, so that 'token_as_Nan_Box' catches the redefinitions as this function should only
                  get the next token and check if the type is an accepted one by the current instruction/operation.
                  */
-                if (acc_types[i] == Token_Type::KEYWORD && alias.contains(tokens[pos].value) && !ignore_keyword_type_check) {
+                if (acc_types[i] == Token_Type::KEYWORD && Alias.contains(tokens[pos].value) && !ignore_keyword_type_check) {
                     for (size_t j = 0; j < acc_types_size && acc_types[j] != Token_Type::UNKNOWN; j++) {
-                        if (acc_types[j] == alias[tokens[pos].value].type) {
+                        if (acc_types[j] == Alias[tokens[pos].value].type) {
                             return tokens[pos];
                         }
                     }
 
                     // the alias value type is not compatible with the types accepted in the current instruction/operation
-                    std::cerr << "ERROR: " << tokens[pos].file_path << ":" << tokens[pos].line_number << ":" << tokens[pos].line_offset << ": KEYWORD has an invalid token type of " << Lexer::type_as_cstr(alias[tokens[pos].value].type) << ".";
+                    std::cerr << "ERROR: " << tokens[pos].file_path << ":" << tokens[pos].line_number << ":" << tokens[pos].line_offset << ": KEYWORD has an invalid token type of " << Lexer::type_as_cstr(Alias[tokens[pos].value].type) << ".";
                     std::cerr << " Expected KEYWORD with one of this types:";
                     for (size_t i = 0; i < acc_types_size && acc_types[i] != Token_Type::UNKNOWN; i++) {
                         if (acc_types[i] != Token_Type::KEYWORD)
@@ -216,14 +237,6 @@ private:
         std::exit(1);
     }
 
-    inline void add_inst(Inst inst) {
-        if (parent == nullptr) {
-            insts.push_back(inst);
-        } else {
-            parent->insts.push_back(inst);
-        }
-    }
-
     size_t pos;
     std::vector<Token> &tokens;
 
@@ -239,21 +252,19 @@ private:
     // used to stores the names for the included files to avoid circular file inclusion
     std::unordered_set<std::string> includes;
 
+    // Parser *parent;
     Parser *parent;
 };
 
 int main() {
     Lexer lexer("../../examples/funcs.vasm");
-    std::vector<Token> &tokens = lexer.tokenize();
-
-    if (lexer.get_error_count(true) != 0)
-        return 1;
-
-    Parser parser(tokens);
+    Parser parser(lexer.tokenize());
     std::vector<Inst> &insts = parser.parse();
 
     Program p;
-    p.insts = insts;
+    p.insts = std::move(insts);
+
+    // p.print_program(true);
 
     Vm vm;
     vm.execute_program(p);
