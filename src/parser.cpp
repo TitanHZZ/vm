@@ -13,6 +13,7 @@
 #define Labels    (parent == nullptr ? labels : parent->labels)
 #define UnRLabels (parent == nullptr ? unresolved_labels : parent->unresolved_labels)
 #define Alias     (parent == nullptr ? alias : parent->alias)
+#define Memory    (parent == nullptr ? memory : parent->memory)
 
 typedef struct {
     void *points_to;
@@ -27,9 +28,12 @@ typedef struct {
 class Parser {
 public:
     Parser(std::vector<Token> &tokens, Parser *parent = nullptr) : pos(0), tokens(tokens), parent(parent) {
+
         // save the file path of the current file
-        if (tokens.size() > 0)
+        if (tokens.size() > 0) {
             Includes.insert(tokens[0].file_path);
+            Insts.reserve(static_cast<size_t>(tokens.size() / 2)); // rough estimation of how many instructions we have
+        }
     }
 
     void parse(Program *p = nullptr) {
@@ -144,23 +148,48 @@ private:
 
             // save the addr of the string as an alias
             Token addr = name;
-            addr.value = std::to_string(memory.size());
+            addr.value = std::to_string(Memory.size());
             addr.type = Token_Type::INTEGER;
             Alias[name.value] = std::move(addr);
 
             // save the string the the memory
-            memory.reserve(value.value.size());
+            Memory.reserve(value.value.size());
             for (const char &c: value.value) {
-                memory.push_back(Nan_Box(static_cast<int64_t>(c)));
+                Memory.push_back(Nan_Box(static_cast<int64_t>(c)));
             }
 
             break;
         }
 
-        case Directive_Type::RES:
+        case Directive_Type::RES: {
+            const Token &name  = next(dir_acc_tk[RES][0], sizeof(dir_acc_tk[RES][0]) / sizeof(dir_acc_tk[RES][0][0]), true);
+            const Token &value = next(dir_acc_tk[RES][1], sizeof(dir_acc_tk[RES][1]) / sizeof(dir_acc_tk[RES][1][0]));
+
+            // check the reserve size
+            const int64_t size = std::strtoll(value.value.c_str(), nullptr, 10);
+            if (size <= 0) {
+                std::cerr << "ERROR: " << value.file_path << ":" << value.line_number << ":" << value.line_offset << ": Can only reserve an amount of memory positive and bigger than 0;" << std::endl;
+                std::exit(1);
+            }
+
+            // save the addr of the memory block as an alias
+            Token addr = name;
+            addr.value = std::to_string(Memory.size());
+            addr.type = Token_Type::INTEGER;
+            Alias[name.value] = std::move(addr);
+
+            // zero initialize the memory block
+            Memory.reserve(static_cast<size_t>(size));
+            for (size_t i = 0; i < static_cast<size_t>(size); i++) {
+                Memory.push_back(Nan_Box(static_cast<int64_t>(0)));
+            }
+
+            break;
+        }
+
         case Directive_Type::COUNT:
         default:
-            std::cerr << "ERROR: Unimplemented directive." << std::endl;
+            std::cerr << "ERROR: " << tokens[pos].file_path << ":" << tokens[pos].line_number << ":" << tokens[pos].line_offset << ": Unknown directive \"" << tokens[pos].value << "\"." << std::endl;
             std::exit(1);
         }
     }
@@ -270,7 +299,7 @@ private:
 
 int main() {
     Program p;
-    Lexer lexer("../../examples/hello_world.vasm");
+    Lexer lexer("../../examples/memory.vasm");
     Parser parser(lexer.tokenize());
     parser.parse(&p);
 

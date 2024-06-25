@@ -24,8 +24,8 @@ constexpr static Token_Type dir_acc_tk[][2][2] = {
         {STRING, UNKNOWN}
     },
     [RES]     = {
-        {UNKNOWN, UNKNOWN},
-        {UNKNOWN, UNKNOWN}
+        {KEYWORD, UNKNOWN},
+        {INTEGER, UNKNOWN}
     }
 };
 
