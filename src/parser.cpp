@@ -299,7 +299,7 @@ private:
 
 int main() {
     Program p;
-    Lexer lexer("../../examples/memory.vasm");
+    Lexer lexer("../../examples/native.vasm");
     Parser parser(lexer.tokenize());
     parser.parse(&p);
 
