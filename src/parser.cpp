@@ -299,11 +299,9 @@ private:
 
 int main() {
     Program p;
-    Lexer lexer("../../examples/native.vasm");
+    Lexer lexer("../../examples/preprocessor.vasm");
     Parser parser(lexer.tokenize());
     parser.parse(&p);
-
-    // p.print_program(true);
 
     Vm vm;
     vm.execute_program(p);

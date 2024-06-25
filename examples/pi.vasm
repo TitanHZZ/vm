@@ -18,7 +18,7 @@
 # sign
 
 # number of iterations
-%define N 100
+%alias N 100
 
     push 0  # index
     push 3  # den

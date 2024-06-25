@@ -84,7 +84,7 @@ std::vector<Token> &Lexer::tokenize () {
                 if (word.back() == ':') {
                     word.pop_back();
                     tokens.push_back({LABEL, std::move(word), path, line_number, pos_start, false});
-                } else if (str_is_inst(word)) {
+                } else if (str_as_inst(word) != Inst_Type::INST_COUNT) {
                     tokens.push_back({INSTRUCTION, std::move(word), path, line_number, pos_start, false});
                 } else {
                     tokens.push_back({KEYWORD, std::move(word), path, line_number, pos_start, false});
