@@ -1,3 +1,7 @@
-%define stdin  0
-%define stdout 1
-%define stderr 2
+%alias stdin  0
+%alias stdout 1
+%alias stderr 2
+
+%alias malloc 0
+%alias free   1
+%alias fwrite 2

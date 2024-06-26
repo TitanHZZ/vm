@@ -3,6 +3,7 @@
 
 #include "program.h"
 #include "program_args.h"
+#include "parser.h"
 
 void program_usage(const char* program_name) {
     std::cerr << "Usage: " << program_name << " [args]" << std::endl;
@@ -34,7 +35,9 @@ int main(int argc, char* argv[]) {
     }
 
     Program p;
-    p.parse_from_file(input_file_path.data());
+    Lexer lexer(input_file_path.data());
+    Parser parser(lexer.tokenize());
+    parser.parse(&p);
     p.write_to_file(output_file_path.data());
     return 0;
 }

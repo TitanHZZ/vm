@@ -2,6 +2,7 @@
 
 #include "program.h"
 #include "program_args.h"
+#include "parser.h"
 
 void program_usage(const char* program_name) {
     std::cerr << "Usage: " << program_name << " [args]" << std::endl;
@@ -27,7 +28,9 @@ int main(int argc, char* argv[]) {
     const bool print_with_labels = program_args::has_option(args, "-l");
 
     Program p;
-    p.read_from_file(input_file_path.data());
+    Lexer lexer(input_file_path.data());
+    Parser parser(lexer.tokenize());
+    parser.parse(&p);
     p.print_program(print_with_labels);
     return 0;
 }

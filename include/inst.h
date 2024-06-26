@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "nan_box.h"
+#include "lexer.h"
 
 typedef int64_t Word;
 typedef enum {
@@ -118,59 +119,66 @@ static const char *inst_type_as_cstr(const Inst_Type& inst) {
     }
 }
 
-static inline bool inst_requires_operand(const Inst_Type& inst) {
-    return inst == INST_PUSH || inst == INST_JMP    || inst == INST_JMP_IF || inst == INST_DUP  || inst == INST_SWAP  ||
-           inst == INST_CALL || inst == INST_NATIVE || inst == INST_PRINT  || inst == INST_READ || inst == INST_WRITE ||
-           inst == INST_TD   || inst == INST_TI     || inst == INST_TP;
+static Inst_Type str_as_inst(const std::string &str) USED_FUNCTION;
+static Inst_Type str_as_inst(const std::string &str) {
+    for (int inst_to_check = 0; inst_to_check < Inst_Type::INST_COUNT; inst_to_check++) {
+        // compare the strings
+        if (!str.compare(inst_type_as_cstr((Inst_Type)inst_to_check))) {
+            return (Inst_Type) inst_to_check;
+        }
+    }
+
+    // should never happen
+    return Inst_Type::INST_COUNT;
+}
+
+// TODO: explain this array
+constexpr static Token_Type inst_acc_tk[][3] = {
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_NOP
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_EXIT
+    {INTEGER, FP,      KEYWORD}, // INST_PUSH
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_POP
+    {INTEGER, UNKNOWN, UNKNOWN}, // INST_SWAP
+    {INTEGER, UNKNOWN, UNKNOWN}, // INST_DUP
+    {INTEGER, UNKNOWN, UNKNOWN}, // INST_PRINT
+    {INTEGER, UNKNOWN, UNKNOWN}, // INST_TD
+    {INTEGER, UNKNOWN, UNKNOWN}, // INST_TI
+    {INTEGER, UNKNOWN, UNKNOWN}, // INST_TP
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_ADD
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_SUB
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_MUL
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_DIV
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_MOD
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_AND
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_OR
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_XOR
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_NOT
+    {INTEGER, KEYWORD, UNKNOWN}, // INST_NATIVE
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_SHL
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_SHR
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_SAR
+    {INTEGER, KEYWORD, UNKNOWN}, // INST_JMP
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_EQU
+    {INTEGER, KEYWORD, UNKNOWN}, // INST_JMP_IF
+    {INTEGER, KEYWORD, UNKNOWN}, // INST_CALL
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_RET
+    {INTEGER, UNKNOWN, UNKNOWN}, // INST_READ
+    {INTEGER, UNKNOWN, UNKNOWN}, // INST_WRITE
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_DUMP_STACK
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_DUMP_MEMORY
+    {UNKNOWN, UNKNOWN, UNKNOWN}, // INST_HALT
+    {UNKNOWN, UNKNOWN, UNKNOWN}  // INST_COUNT
+};
+
+static inline bool inst_requires_operand(const Inst_Type inst) {
+    return inst_acc_tk[inst][0] != Token_Type::UNKNOWN;
 }
 
 static inline bool inst_operand_might_be_label(const Inst_Type& inst) {
+    // instructions with KEYWORD in the table above
     return inst == INST_JMP || inst == INST_JMP_IF || inst == INST_CALL;
 }
 
 static inline bool inst_operand_might_be_function(const Inst_Type& inst) {
     return inst == INST_NATIVE;
 }
-
-static inline bool inst_accepts_fp_operand(const Inst_Type& inst) {
-    return inst == INST_PUSH;
-}
-
-/*static inline bool inst_operand_cannot_be_negative(const Inst_Type& inst) {
-    return inst == INST_JMP || inst == INST_JMP_IF;
-}*/
-
-/*#define MAKE_INST_NOP()         (Inst) {.type = Inst_Type::INST_NOP, .operand = 0}
-#define MAKE_INST_HALT()        (Inst) {.type = Inst_Type::INST_HALT, .operand = 0}
-#define MAKE_INST_EXIT()        (Inst) {.type = Inst_Type::INST_EXIT, .operand = 0}
-#define MAKE_INST_PUSH(val)     (Inst) {.type = Inst_Type::INST_PUSH, .operand = val}
-#define MAKE_INST_POP()         (Inst) {.type = Inst_Type::INST_POP, .operand = 0}
-#define MAKE_INST_ADD()         (Inst) {.type = Inst_Type::INST_ADD, .operand = 0}
-#define MAKE_INST_SUB()         (Inst) {.type = Inst_Type::INST_SUB, .operand = 0}
-#define MAKE_INST_MUL()         (Inst) {.type = Inst_Type::INST_MUL, .operand = 0}
-#define MAKE_INST_DIV()         (Inst) {.type = Inst_Type::INST_DIV, .operand = 0}
-#define MAKE_INST_JMP(val)      (Inst) {.type = Inst_Type::INST_JMP, .operand = val}
-#define MAKE_INST_EQU()         (Inst) {.type = Inst_Type::INST_EQU, .operand = 0}
-#define MAKE_INST_JMP_IF(val)   (Inst) {.type = Inst_Type::INST_JMP_IF, .operand = val}
-#define MAKE_INST_DUP(val)      (Inst) {.type = Inst_Type::INST_DUP, .operand = val}
-#define MAKE_INST_DUMP_STACK()  (Inst) {.type = Inst_Type::INST_DUMP_STACK, .operand = 0}
-#define MAKE_INST_DUMP_MEMORY() (Inst) {.type = Inst_Type::INST_DUMP_MEMORY, .operand = 0}
-#define MAKE_INST_SWAP(val)     (Inst) {.type = Inst_Type::INST_SWAP, .operand = val}
-#define MAKE_INST_CALL(val)     (Inst) {.type = Inst_Type::INST_CALL, .operand = val}
-#define MAKE_INST_RET()         (Inst) {.type = Inst_Type::INST_RET, .operand = 0}
-#define MAKE_INST_NATIVE(val)   (Inst) {.type = Inst_Type::INST_NATIVE, .operand = val}
-#define MAKE_INST_PRINT(val)    (Inst) {.type = Inst_Type::INST_PRINT, .operand = val}
-#define MAKE_INST_SHL()         (Inst) {.type = Inst_Type::INST_SHL, .operand = 0}
-#define MAKE_INST_SHR()         (Inst) {.type = Inst_Type::INST_SHR, .operand = 0}
-#define MAKE_INST_AND()         (Inst) {.type = Inst_Type::INST_AND, .operand = 0}
-#define MAKE_INST_OR()          (Inst) {.type = Inst_Type::INST_OR, .operand = 0}
-#define MAKE_INST_XOR()         (Inst) {.type = Inst_Type::INST_XOR, .operand = 0}
-#define MAKE_INST_NOT()         (Inst) {.type = Inst_Type::INST_NOT, .operand = 0}
-#define MAKE_INST_READ8()       (Inst) {.type = Inst_Type::INST_READ8, .operand = 0}
-#define MAKE_INST_READ16()      (Inst) {.type = Inst_Type::INST_READ16, .operand = 0}
-#define MAKE_INST_READ32()      (Inst) {.type = Inst_Type::INST_READ32, .operand = 0}
-#define MAKE_INST_READ64()      (Inst) {.type = Inst_Type::INST_READ64, .operand = 0}
-#define MAKE_INST_WRITE8()      (Inst) {.type = Inst_Type::INST_WRITE8, .operand = 0}
-#define MAKE_INST_WRITE16()     (Inst) {.type = Inst_Type::INST_WRITE16, .operand = 0}
-#define MAKE_INST_WRITE32()     (Inst) {.type = Inst_Type::INST_WRITE32, .operand = 0}
-#define MAKE_INST_WRITE64()     (Inst) {.type = Inst_Type::INST_WRITE64, .operand = 0}*/

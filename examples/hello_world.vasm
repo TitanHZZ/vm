@@ -1,8 +1,8 @@
 # classic hello world example
 # using a different file type just to avoid compilation/translation during tests
-%include ../../examples/stdlib.hasm
-%string str "Hello", 44, " World!", 10
-%define str_size 14
+%include "../../examples/stdlib.hasm"
+%string str "Hello, World!\n"
+%alias str_size 14
 
 main:
     push stdout # defined in stdlib.hasm

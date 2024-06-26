@@ -1,7 +1,8 @@
 # simple demonstration of the use of native functions
+%include "../../examples/stdlib.hasm"
 
 # number of bytes to allocate
-%define N 100
+%alias N 100
 
 main:
     # call 'malloc' c function (allocates memory on the real system)

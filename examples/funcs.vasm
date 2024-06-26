@@ -5,9 +5,8 @@
     # make 'main' be the entry point
     jmp main
 
-# '%include' directive file path does not need quotes (but can have them)
-%include ../../examples/sin.hasm # labels are global (cannot be repeated in different files)
-%define N 13 # degrees
+%include "../../examples/sin.hasm" # labels are global (cannot be repeated in different files)
+%alias N 13 # degrees
 
 main:
     push N

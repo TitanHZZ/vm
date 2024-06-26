@@ -1,7 +1,7 @@
 # simple program that prints the fibonacci sequence
 
 # number of iterations
-%define N 20
+%alias N 20
 
 main:
     push 2 # index (starts at 2 because of the first two numbers in the sequence)

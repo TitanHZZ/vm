@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 3.5.0)
 project(vm VERSION 0.1.0 LANGUAGES C CXX)
- 
+
 # enable testing for this project
 include(CTest)
 enable_testing()
 
 # set global configurations
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF) # disable compiler specific extensions
 
 # taken from: https://stackoverflow.com/q/45955272
 if(MSVC)

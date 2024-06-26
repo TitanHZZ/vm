@@ -18,7 +18,7 @@
 # prev
 
 # number of iterations
-%define N 12
+%alias N 12
 
     push 0 # index
     push 1 # result

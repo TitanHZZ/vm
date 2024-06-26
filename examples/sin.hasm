@@ -1,5 +1,4 @@
 # simple program to test the usage of funcs and '%include' preprocessor directive
-
 # function that calculates an aproximation of sin(x)
 sin:
     swap 1 # swap ret addr with parameter

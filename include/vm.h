@@ -49,7 +49,7 @@ public:
     ~Vm();
 
     // void execute_program(Inst program[], const size_t program_size);
-    void execute_program(const char *path);
+    // void execute_program(const char *path);
     void execute_program(Program& program); /*{
         this->execute_program(program.insts.data(), program.insts.size());
     }*/
