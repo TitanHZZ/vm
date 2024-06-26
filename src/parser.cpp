@@ -238,9 +238,9 @@ const Token &Parser::next(const Token_Type acc_types[], size_t acc_types_size, b
                 // the alias value type is not compatible with the types accepted in the current instruction/operation
                 std::cerr << "ERROR: " << tokens[pos].file_path << ":" << tokens[pos].line_number << ":" << tokens[pos].line_offset << ": KEYWORD has an invalid token type of " << Lexer::type_as_cstr(Alias[tokens[pos].value].type) << ".";
                 std::cerr << " Expected KEYWORD with one of this types:";
-                for (size_t i = 0; i < acc_types_size && acc_types[i] != Token_Type::UNKNOWN; i++) {
-                    if (acc_types[i] != Token_Type::KEYWORD)
-                        std::cerr << " " << Lexer::type_as_cstr(acc_types[i]);
+                for (size_t k = 0; k < acc_types_size && acc_types[k] != Token_Type::UNKNOWN; k++) {
+                    if (acc_types[k] != Token_Type::KEYWORD)
+                        std::cerr << " " << Lexer::type_as_cstr(acc_types[k]);
                 }
                 std::cerr << std::endl;
                 std::exit(1);

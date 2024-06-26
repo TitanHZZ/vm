@@ -11,19 +11,19 @@ typedef enum {
 } Directive_Type;
 
 constexpr static Token_Type dir_acc_tk[][2][2] = {
-    [ALIAS]   = {
+    { // ALIAS
         {KEYWORD, UNKNOWN},
         {INTEGER, FP}
     },
-    [INCLUDE] = {
+    { // INCLUDE
         {STRING,  UNKNOWN},
         {UNKNOWN, UNKNOWN}
     },
-    [STR]     = {
+    { // STR
         {KEYWORD, UNKNOWN},
         {STRING, UNKNOWN}
     },
-    [RES]     = {
+    { // RES
         {KEYWORD, UNKNOWN},
         {INTEGER, UNKNOWN}
     }
