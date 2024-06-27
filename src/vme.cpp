@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     Program p;
     p.read_from_file(input_file_path.data());
 
-    Vm vm;
-    vm.execute_program(p);
+    Vm vm(p);
+    vm.execute_program();
     return 0;
 }
