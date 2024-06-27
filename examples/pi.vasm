@@ -20,6 +20,7 @@
 # number of iterations
 %alias N 100
 
+main:
     push 0  # index
     push 3  # den
     push 1  # result

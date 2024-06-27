@@ -1,4 +1,5 @@
 # simple program to test the asm generation
+main:
     push 10
     push 20
     push 30

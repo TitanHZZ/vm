@@ -1,5 +1,4 @@
 # test type casting instructions
-
 main:
     push 10.6
     print 0

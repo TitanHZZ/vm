@@ -1,5 +1,4 @@
 # simple program to test bitwise operators
-
 main:
     push 1
     push 2
