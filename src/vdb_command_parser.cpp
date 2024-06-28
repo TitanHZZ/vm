@@ -101,8 +101,14 @@ Vdb_Command Vdb_Cmd_Parser::parse_command(const std::vector<Vdb_Token> &tokens) 
         return Vdb_Command { Vdb_Command_Type::BREAK, std::vector<std::string>(1, std::move(number.value)) };
     }
 
-    case Vdb_Command_Type::NI:
     case Vdb_Command_Type::DISAS:
+        // handle the disassemble command
+        return Vdb_Command { Vdb_Command_Type::DISAS, std::vector<std::string>() };
+
+    case Vdb_Command_Type::NI:
+        // handle next instruction command
+        return Vdb_Command { Vdb_Command_Type::NI, std::vector<std::string>() };
+
     case Vdb_Command_Type::INFO:
     case Vdb_Command_Type::DELETE:
     case Vdb_Command_Type::X:

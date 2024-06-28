@@ -51,6 +51,7 @@ public:
 
     void execute_program(bool debug_mode = false);
     Exception_Type next();
+    inline uint64_t get_ip() { return ip; }
 
     // debug functions
     void dump_stack();
