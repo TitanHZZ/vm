@@ -1,57 +1,19 @@
 #include <iostream>
 #include <algorithm>
 
+#include "vdb_command_parser.h"
 #include "program_args.h"
-#include "program.h"
-#include "parser.h"
 #include "vm.h"
+#include "parser.h"
 
-typedef enum {
-    OPTION_RUN = 0,
-    OPTION_BREAKPOINT,
-    OPTION_NEXT_INSTRUCTION,
-    OPTION_EXIT,
-    OPTION_HELP,
-    OPTION_NOTHING,
-    OPTION_UNKNOWN
-} Option_Type;
-
-constexpr static const char *const strs_for_option[][2] = {
-    {"r", "run"},               // OPTION_RUN
-    {"break", "br"},            // OPTION_BREAKPOINT
-    {"next instruction", "ni"}, // OPTION_NEXT_INSTRUCTION
-    {"exit", "e"},              // OPTION_EXIT
-    {"?", "help"},              // OPTION_HELP
-    {"\0", "\0"},               // OPTION_NOTHING
-    {"\0", "\0"}                // OPTION_UNKNOWN
-};
-
-Option_Type str_as_option(std::string &str) {
-    // replace tabs with spaces
-    std::replace(std::begin(str), std::end(str), '\t', ' ');
-
-    // convert the string to lower case
-    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::tolower(c); });
-
-    // remove consecutive spaces
-    std::string::iterator iter = std::unique(str.begin(), str.end(), [](char lhs, char rhs) { return (lhs == rhs) && (lhs == ' '); });
-    str.erase(iter, str.end());
-
-    // check if we have an empty string
-    if (str == "" || str == " ")
-        return Option_Type::OPTION_NOTHING;
-
-    for (size_t i = 0; i < sizeof(strs_for_option) / sizeof(strs_for_option[0]); i++) {
-        for (size_t j = 0; j < sizeof(strs_for_option[0]) / sizeof(strs_for_option[0][0]); j++) {
-            if (str == strs_for_option[i][j]) {
-                // we got our option
-                return (Option_Type) i;
-            }
-        }
-    }
-
-    return Option_Type::OPTION_UNKNOWN;
-}
+// simple command line language:
+// run                  -> run the program until a breakpoint or the end
+// ni                   -> run just the next instruction
+// disas / disassemble  -> disassemble the byte code
+// break 0              -> set breakpoint at addr 0
+// info (break | ...)   -> get information about something
+// delete (break 0 | ...) -> delete something
+// x 0 10               -> inspect (print) the memory from addr 0 to 10
 
 void program_usage(const char* program_name) {
     std::cerr << "Usage: " << program_name << " [args]" << std::endl;
@@ -82,36 +44,33 @@ int main(int argc, char* argv[]) {
     Vm vm(p);
     vm.execute_program(true);
 
-    bool needs_exit = false;
+    std::unordered_set<size_t> breakpoints;
+
     std::string user_option;
+    Vdb_Cmd_Parser cmd_parser;
     std::cout << "vdb: a gdb style debugger for vm!" << std::endl;
-    while (!needs_exit) {
+    while (true) {
         std::cout << "(vdb) ";
 
         // check for I/O error or stdin closing
         if (!std::getline(std::cin, user_option))
-            needs_exit = true;
-
-        switch (str_as_option(user_option)) {
-        case Option_Type::OPTION_RUN: // TODO: this needs to respect the breakpoints
-            while(vm.next() != Exception_Type::EXCEPTION_EXIT);
             break;
 
-        case Option_Type::OPTION_HELP:
-            std::cout << "Help menu is not yet complete!" << std::endl;
+        Vdb_Command cmd = cmd_parser.get_vdb_command(user_option);
+        switch (cmd.type) {
+        case Vdb_Command_Type::RUN:
+        case Vdb_Command_Type::NI:
+        case Vdb_Command_Type::DISAS:
+        case Vdb_Command_Type::BREAK:
+        case Vdb_Command_Type::INFO:
+        case Vdb_Command_Type::DELETE:
+        case Vdb_Command_Type::X:
+            std::cout << "Got command!" << std::endl;
             break;
 
-        case Option_Type::OPTION_EXIT:
-            return 0;
-
-        case Option_Type::OPTION_NOTHING:
-            break;
-
-        case Option_Type::OPTION_BREAKPOINT:
-        case Option_Type::OPTION_NEXT_INSTRUCTION:
-        case Option_Type::OPTION_UNKNOWN:
+        case Vdb_Command_Type::NOTHING:
+        case Vdb_Command_Type::UNKNOWN:
         default:
-            std::cout << "Unknown option `" << user_option << "`. For possible commands, please use `?` or `help`" << std::endl;
             break;
         }
     }
