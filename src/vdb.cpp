@@ -35,7 +35,7 @@ public:
             Vdb_Command cmd = cmd_parser.get_vdb_command(user_option);
             switch (cmd.type) {
             case Vdb_Command_Type::RUN:
-                while(!breakpoints.contains(vm.get_ip()) && vm.next() != Exception_Type::EXCEPTION_EXIT);
+                while(vm.next() != Exception_Type::EXCEPTION_EXIT && !breakpoints.contains(vm.get_ip()));
                 break;
 
             case Vdb_Command_Type::DISAS:
@@ -46,7 +46,12 @@ public:
                 vm.next();
                 break;
 
-            case Vdb_Command_Type::BREAK:
+            case Vdb_Command_Type::BREAK: {
+                const uint64_t addr = static_cast<uint64_t>(std::strtoll(cmd.args[0].c_str(), nullptr, 10));
+                breakpoints.insert(addr);
+                break;
+            }
+
             case Vdb_Command_Type::INFO:
             case Vdb_Command_Type::DELETE:
             case Vdb_Command_Type::X:
@@ -85,11 +90,15 @@ private:
         size_t inst_count = 0;
         for (const Inst& inst: p.insts) {
             // print labels
+
             if (jmp_addr_label_names.contains((void*)inst_count))
                 std::cout << std::endl << jmp_addr_label_names.at((void*)inst_count) << ":" << std::endl;
 
+            // print breakpoint indicator if needed
+            std::cout << (breakpoints.contains(inst_count) ? "*" : " ");
+
             // print instruction with "current instruction" indicator
-            std::cout << (vm.get_ip() == inst_count ? " -> " : "    ") << inst_type_as_cstr(inst.type);
+            std::cout << (vm.get_ip() == inst_count ? "-> " : "   ") << inst_type_as_cstr(inst.type);
 
             // print instruction operand
             if (inst_requires_operand(inst.type)) {
@@ -128,7 +137,7 @@ private:
     Vm &vm;
     Program &p;
 
-    std::unordered_set<size_t> breakpoints;
+    std::unordered_set<uint64_t> breakpoints;
 };
 
 void program_usage(const char* program_name) {
