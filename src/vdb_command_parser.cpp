@@ -45,7 +45,7 @@ std::vector<Vdb_Token> Vdb_Cmd_Parser::vdb_lexer(const std::string &str) {
 
         } else if (std::isdigit(str[pos])) {
             // handle digits
-            const std::string number = read_while(str, [](char c){ return std::isdigit(c); });
+            const std::string number = read_while(str, [](char c){ return std::isdigit(c) || c == 'x' || (c >= 'a' && c <= 'f'); });
             tokens.push_back({std::move(number), Vdb_Token_Type::NUMBER});
 
         } else if (std::isalpha(str[pos])) {

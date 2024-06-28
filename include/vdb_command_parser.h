@@ -61,3 +61,5 @@ private:
 
     size_t pos = 0;
 };
+
+// Vdb::Cmd_Parser::get_cmd();

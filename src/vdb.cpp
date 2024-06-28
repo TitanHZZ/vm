@@ -1,5 +1,7 @@
 #include <iostream>
 #include <algorithm>
+#include <iomanip>
+#include <sstream>
 
 #include "vdb_command_parser.h"
 #include "program_args.h"
@@ -24,7 +26,7 @@ public:
 
         std::string user_option;
         Vdb_Cmd_Parser cmd_parser;
-        std::cout << "vdb: a gdb style debugger for vm!" << std::endl;
+        std::cout << "vdb: a gdb style debugger for vm!\nLoading program..." << std::endl;
         while (true) {
             std::cout << "(vdb) ";
 
@@ -47,8 +49,16 @@ public:
                 break;
 
             case Vdb_Command_Type::BREAK: {
-                const uint64_t addr = static_cast<uint64_t>(std::strtoll(cmd.args[0].c_str(), nullptr, 10));
-                breakpoints.insert(addr);
+                // const uint64_t addr = static_cast<uint64_t>(std::strtoll(cmd.args[0].c_str(), nullptr, 10));
+                // const uint64_t addr = ;
+                // std::string hexString = "0x1A3F"; // example hex string
+                size_t addr;
+                std::istringstream iss(cmd.args[0]);
+                iss >> std::hex >> addr;
+                if (addr < p.insts.size())
+                    breakpoints.insert(addr);
+                else
+                    std::cout << "Failed to set break point. Address is bigger than the number of instructions!" << std::endl;
                 break;
             }
 
@@ -69,12 +79,6 @@ public:
     }
 
 private:
-    // void next_instruction() {
-    //     while(breakpoints.contains(vm.get_ip()) && vm.next() != Exception_Type::EXCEPTION_EXIT);
-    //     if(!breakpoints.contains(vm.get_ip())) {
-    //     }
-    // }
-
     void disassemble() {
         size_t label_suffix = 0;
         std::unordered_map<void*, std::string> jmp_addr_label_names;
@@ -92,13 +96,18 @@ private:
             // print labels
 
             if (jmp_addr_label_names.contains((void*)inst_count))
-                std::cout << std::endl << jmp_addr_label_names.at((void*)inst_count) << ":" << std::endl;
+                std::cout << std::endl << "           " << jmp_addr_label_names.at((void*)inst_count) << ":" << std::endl;
+
+            // print instruction addr
+            // std::cout << std::setw(8) << std::setfill('0') << std::hex << std::showbase << inst_count;
+            std::cout << "0x" << std::hex << std::setw(8) << std::setfill('0') << inst_count;
+            std::cout << std::dec << std::setfill(' '); // reset the console to the defaults
 
             // print breakpoint indicator if needed
-            std::cout << (breakpoints.contains(inst_count) ? "*" : " ");
+            std::cout << (breakpoints.contains(inst_count) ? " *" : "  ");
 
             // print instruction with "current instruction" indicator
-            std::cout << (vm.get_ip() == inst_count ? "-> " : "   ") << inst_type_as_cstr(inst.type);
+            std::cout << (vm.get_ip() == inst_count ? " ->  " : "     ") << inst_type_as_cstr(inst.type);
 
             // print instruction operand
             if (inst_requires_operand(inst.type)) {
