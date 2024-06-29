@@ -4,7 +4,34 @@
 #include <functional>
 
 /*
- * Command Parsing related structures and enums.
+ * Vdb Lexer related structs and enums.
+ */
+enum class Vdb_Token_Type {
+    COMMAND = 0,
+    NUMBER,
+    KEYWORD,
+    UNKNOWN
+};
+
+struct Vdb_Token {
+    Vdb_Token_Type type;
+    std::string value;
+};
+
+constexpr static Vdb_Token_Type cmd_type_acc_tk_type[][2] = {
+    {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // RUN
+    {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // NI
+    {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // DISAS
+    {Vdb_Token_Type::NUMBER,  Vdb_Token_Type::KEYWORD}, // BREAK
+    {Vdb_Token_Type::COMMAND, Vdb_Token_Type::UNKNOWN}, // INFO
+    {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // DELETE
+    {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // X
+    {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // NOTHING
+    {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}  // UNKNOWN
+};
+
+/*
+ * Vdb Parser related structures and enums.
  */
 enum class Vdb_Command_Type {
     RUN = 0,
@@ -21,22 +48,10 @@ enum class Vdb_Command_Type {
 
 struct Vdb_Command {
     Vdb_Command_Type type;
-    std::vector<std::string> args;
+    std::vector<Vdb_Token> args;
 };
 
-/*
- * Vdb Lexer related structs and enums.
- */
-enum class Vdb_Token_Type {
-    COMMAND = 0,
-    NUMBER,
-    UNKNOWN
-};
-
-struct Vdb_Token {
-    std::string value;
-    Vdb_Token_Type type;
-};
+constexpr static size_t cmd_type_acc_tk_type_element_count = sizeof(cmd_type_acc_tk_type[0]) / sizeof(cmd_type_acc_tk_type[0][0]);
 
 class Vdb_Cmd_Parser {
 public:
@@ -56,10 +71,8 @@ private:
     std::vector<Vdb_Token> vdb_lexer(const std::string &str);
 
     // parser funcs
-    const Vdb_Token next(const std::vector<Vdb_Token> &tokens, const Vdb_Token_Type acc_type);
+    const Vdb_Token next(const std::vector<Vdb_Token> &tokens, const Vdb_Token_Type *acc_types);
     Vdb_Command parse_command(const std::vector<Vdb_Token> &tokens);
 
     size_t pos = 0;
 };
-
-// Vdb::Cmd_Parser::get_cmd();

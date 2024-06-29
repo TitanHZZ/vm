@@ -19,6 +19,7 @@ Vdb_Command_Type Vdb_Cmd_Parser::str_as_vdb_cmd(const std::string &str) {
 const char *Vdb_Cmd_Parser::tk_type_as_str(Vdb_Token_Type type) {
     switch (type) {
     case Vdb_Token_Type::COMMAND: return "string";
+    case Vdb_Token_Type::KEYWORD: return "string";
     case Vdb_Token_Type::NUMBER:  return "number";
     case Vdb_Token_Type::UNKNOWN: return "UNKNOWN";
     default: return "UNKNOWN";
@@ -46,21 +47,21 @@ std::vector<Vdb_Token> Vdb_Cmd_Parser::vdb_lexer(const std::string &str) {
         } else if (std::isdigit(str[pos])) {
             // handle digits
             const std::string number = read_while(str, [](char c){ return std::isdigit(c) || c == 'x' || (c >= 'a' && c <= 'f'); });
-            tokens.push_back({std::move(number), Vdb_Token_Type::NUMBER});
+            tokens.push_back({ Vdb_Token_Type::NUMBER, std::move(number) });
 
         } else if (std::isalpha(str[pos])) {
             // handle keywords
-            const std::string keyword = read_while(str, [](char c){ return std::isalpha(c); });
+            const std::string keyword = read_while(str, [](char c){ return std::isalpha(c) || c == '_' || (c >= '0' && c <= '9'); });
             if (str_as_vdb_cmd(keyword) != Vdb_Command_Type::UNKNOWN) {
-                tokens.push_back({std::move(keyword), Vdb_Token_Type::COMMAND});
+                tokens.push_back({ Vdb_Token_Type::COMMAND, std::move(keyword) });
             } else {
-                tokens.push_back({std::move(keyword), Vdb_Token_Type::UNKNOWN});
+                tokens.push_back({ Vdb_Token_Type::KEYWORD, std::move(keyword) });
             }
 
         } else {
             // handle unknown keywords
             const std::string val = read_while(str, [](char c) { return !std::isspace(c); });
-            tokens.push_back({std::move(val), Vdb_Token_Type::UNKNOWN});
+            tokens.push_back({ Vdb_Token_Type::UNKNOWN, std::move(val) });
         }
     }
 
@@ -70,44 +71,62 @@ std::vector<Vdb_Token> Vdb_Cmd_Parser::vdb_lexer(const std::string &str) {
 /*
  * parser funcs
  */
-const Vdb_Token Vdb_Cmd_Parser::next(const std::vector<Vdb_Token> &tokens, const Vdb_Token_Type acc_type) {
+// TODO: remove code duplication
+const Vdb_Token Vdb_Cmd_Parser::next(const std::vector<Vdb_Token> &tokens, const Vdb_Token_Type *acc_types) {
     if (pos == tokens.size() - 1) {
-        std::cerr << "ERROR: Expected command argument of type `" << tk_type_as_str(acc_type) << "` but found nothing." << std::endl;
-        return Vdb_Token {std::string(), Vdb_Token_Type::UNKNOWN};
+        std::cerr << "Expected command argument of one of the following types: ";
+        for (size_t i = 0; i < cmd_type_acc_tk_type_element_count; i++) {
+            std::cout << "`" << tk_type_as_str(acc_types[i]) << "`";
+
+            if (i != cmd_type_acc_tk_type_element_count - 1)
+                std::cout << ", ";
+        }
+
+        std::cout << " but found nothing." << std::endl;
+        return Vdb_Token { Vdb_Token_Type::UNKNOWN, std::string() };
     }
 
-    if (tokens[++pos].type != acc_type) {
-        std::cerr << "ERROR: Expected token of type `" << tk_type_as_str(acc_type) << "` but found `" << tokens[pos].value << "`." << std::endl;
-        return Vdb_Token {std::string(), Vdb_Token_Type::UNKNOWN};
+    pos++;
+    for (size_t i = 0; i < cmd_type_acc_tk_type_element_count; i++) {
+        if (tokens[pos].type == acc_types[i])
+            return tokens[pos];
     }
 
-    return tokens[pos];
+    std::cerr << "Expected command argument of one of the following types: ";
+    for (size_t i = 0; i < cmd_type_acc_tk_type_element_count; i++) {
+        std::cout << "`" << tk_type_as_str(acc_types[i]) << "`";
+
+        if (i != cmd_type_acc_tk_type_element_count - 1)
+            std::cout << ", ";
+    }
+    std::cout << " but found `" << tokens[pos].value << "`." << std::endl;
+    return Vdb_Token { Vdb_Token_Type::UNKNOWN, std::string() };
 }
 
 Vdb_Command Vdb_Cmd_Parser::parse_command(const std::vector<Vdb_Token> &tokens) {
     switch (str_as_vdb_cmd(tokens[pos].value)) {
     case Vdb_Command_Type::RUN: {
         // handle the run command
-        return Vdb_Command { Vdb_Command_Type::RUN, std::vector<std::string>() };
+        return Vdb_Command { Vdb_Command_Type::RUN, std::vector<Vdb_Token>() };
     }
 
     case Vdb_Command_Type::BREAK: {
         // handle the break command
-        const Vdb_Token &number = next(tokens, Vdb_Token_Type::NUMBER);
-        if (number.type == Vdb_Token_Type::UNKNOWN) {
-            return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<std::string>() };
+        const Vdb_Token &arg = next(tokens, cmd_type_acc_tk_type[static_cast<int>(Vdb_Command_Type::BREAK)]);
+        if (arg.type == Vdb_Token_Type::UNKNOWN) {
+            return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<Vdb_Token>() };
         }
 
-        return Vdb_Command { Vdb_Command_Type::BREAK, std::vector<std::string>(1, std::move(number.value)) };
+        return Vdb_Command { Vdb_Command_Type::BREAK, std::vector<Vdb_Token>(1, std::move(tokens[pos])) };
     }
 
     case Vdb_Command_Type::DISAS:
         // handle the disassemble command
-        return Vdb_Command { Vdb_Command_Type::DISAS, std::vector<std::string>() };
+        return Vdb_Command { Vdb_Command_Type::DISAS, std::vector<Vdb_Token>() };
 
     case Vdb_Command_Type::NI:
         // handle next instruction command
-        return Vdb_Command { Vdb_Command_Type::NI, std::vector<std::string>() };
+        return Vdb_Command { Vdb_Command_Type::NI, std::vector<Vdb_Token>() };
 
     case Vdb_Command_Type::INFO:
     case Vdb_Command_Type::DELETE:
@@ -115,7 +134,7 @@ Vdb_Command Vdb_Cmd_Parser::parse_command(const std::vector<Vdb_Token> &tokens) 
     case Vdb_Command_Type::NOTHING:
     case Vdb_Command_Type::UNKNOWN:
     default:
-        return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<std::string>() };
+        return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<Vdb_Token>() };
     }
 }
 
@@ -132,20 +151,21 @@ Vdb_Command Vdb_Cmd_Parser::get_vdb_command(const std::string &str) {
             break;
         }
 
+        case Vdb_Token_Type::KEYWORD:
         case Vdb_Token_Type::NUMBER:
         case Vdb_Token_Type::UNKNOWN:
         default:
             std::cout << "Unknown command `" << tokens[pos].value << "`." << std::endl;
-            return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<std::string>() };
+            return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<Vdb_Token>() };
         }
     } else {
-        return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<std::string>() };
+        return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<Vdb_Token>() };
     }
 
     pos++;
     if (tokens.size() - pos > 0) {
-        std::cout << "ERROR: Malformed command, unexpected token `" << tokens[pos].value << "`." << std::endl;
-        return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<std::string>() };
+        std::cout << "Malformed command, unexpected token `" << tokens[pos].value << "`." << std::endl;
+        return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<Vdb_Token>() };
     }
 
     return res;

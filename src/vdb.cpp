@@ -48,19 +48,9 @@ public:
                 vm.next();
                 break;
 
-            case Vdb_Command_Type::BREAK: {
-                // const uint64_t addr = static_cast<uint64_t>(std::strtoll(cmd.args[0].c_str(), nullptr, 10));
-                // const uint64_t addr = ;
-                // std::string hexString = "0x1A3F"; // example hex string
-                size_t addr;
-                std::istringstream iss(cmd.args[0]);
-                iss >> std::hex >> addr;
-                if (addr < p.insts.size())
-                    breakpoints.insert(addr);
-                else
-                    std::cout << "Failed to set break point. Address is bigger than the number of instructions!" << std::endl;
+            case Vdb_Command_Type::BREAK:
+                set_breakpoint(cmd);
                 break;
-            }
 
             case Vdb_Command_Type::INFO:
             case Vdb_Command_Type::DELETE:
@@ -79,17 +69,19 @@ public:
     }
 
 private:
-    void disassemble() {
+    void get_label_def() {
         size_t label_suffix = 0;
-        std::unordered_map<void*, std::string> jmp_addr_label_names;
-
-        // get places for labels if requested
         for (const Inst& inst: p.insts) {
-            if (inst_operand_might_be_label(inst.type) && jmp_addr_label_names.contains(inst.operand.as_ptr()) == false) {
-                jmp_addr_label_names.emplace(inst.operand.as_ptr(), "label_" + std::to_string(label_suffix));
+            if (inst_operand_might_be_label(inst.type)) {
+                // jmp_addr_label_names.emplace(inst.operand.as_ptr(), "label_" + std::to_string(label_suffix));
+                labels["label_" + std::to_string(label_suffix)] = (uint64_t)inst.operand.as_ptr();
                 label_suffix++;
             }
         }
+    }
+
+    void disassemble() {
+        // std::unordered_map<void*, std::string> jmp_addr_label_names;
 
         size_t inst_count = 0;
         for (const Inst& inst: p.insts) {
@@ -99,7 +91,6 @@ private:
                 std::cout << std::endl << "           " << jmp_addr_label_names.at((void*)inst_count) << ":" << std::endl;
 
             // print instruction addr
-            // std::cout << std::setw(8) << std::setfill('0') << std::hex << std::showbase << inst_count;
             std::cout << "0x" << std::hex << std::setw(8) << std::setfill('0') << inst_count;
             std::cout << std::dec << std::setfill(' '); // reset the console to the defaults
 
@@ -143,10 +134,34 @@ private:
         }
     }
 
+    void set_breakpoint(Vdb_Command &cmd) {
+        if (cmd.args[0].type == Vdb_Token_Type::NUMBER) {
+            // parse the number
+            size_t addr;
+            std::istringstream iss(cmd.args[0].value);
+            iss >> std::hex >> addr;
+
+            // set breakpoint
+            if (addr < p.insts.size()) {
+                breakpoints.insert(addr);
+            } else {
+                std::cout << "Failed to set break point. Address is bigger than the number of instructions!" << std::endl;
+            }
+        } else {
+            // check if label exists
+            if (!labels.contains(cmd.args[0].value)) {
+                std::cout << "Failed to set break point. Label `" << cmd.args[0].value << "` does not  exist!" << std::endl;
+            } else {
+                breakpoints.insert(labels[cmd.args[0].value]);
+            }
+        }
+    }
+
     Vm &vm;
     Program &p;
 
     std::unordered_set<uint64_t> breakpoints;
+    std::unordered_map<std::string, uint64_t> labels;
 };
 
 void program_usage(const char* program_name) {
