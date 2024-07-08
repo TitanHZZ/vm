@@ -26,7 +26,9 @@ public:
 
         std::string user_option;
         Vdb_Cmd_Parser cmd_parser;
+        bool program_finished = false;
         std::cout << "vdb: a gdb style debugger for vm!\nLoading program..." << std::endl;
+        get_label_def();
         while (true) {
             std::cout << "(vdb) ";
 
@@ -37,7 +39,22 @@ public:
             Vdb_Command cmd = cmd_parser.get_vdb_command(user_option);
             switch (cmd.type) {
             case Vdb_Command_Type::RUN:
-                while(vm.next() != Exception_Type::EXCEPTION_EXIT && !breakpoints.contains(vm.get_ip()));
+                if (program_finished) {
+                    std::cout << "Program has finished. Cannot continue." << std::endl;
+                    break;
+                }
+
+                while (!program_finished) {
+                    const Exception_Type ret = vm.next();
+
+                    if (ret == Exception_Type::EXCEPTION_EXIT) {
+                        std::cout << "Program finished." << std::endl;
+                        program_finished = true;
+                    }
+
+                    if (breakpoints.contains(vm.get_ip()))
+                        break;
+                }
                 break;
 
             case Vdb_Command_Type::DISAS:
@@ -45,7 +62,13 @@ public:
                 break;
 
             case Vdb_Command_Type::NI:
-                vm.next();
+                if (program_finished) {
+                    std::cout << "Program has finished. Cannot continue." << std::endl;
+                    break;
+                }
+
+                if (vm.next() == EXCEPTION_EXIT)
+                    std::cout << "Program finished." << std::endl;
                 break;
 
             case Vdb_Command_Type::BREAK:
@@ -74,21 +97,20 @@ private:
         for (const Inst& inst: p.insts) {
             if (inst_operand_might_be_label(inst.type)) {
                 // jmp_addr_label_names.emplace(inst.operand.as_ptr(), "label_" + std::to_string(label_suffix));
-                labels["label_" + std::to_string(label_suffix)] = (uint64_t)inst.operand.as_ptr();
+                label_to_addr["label_" + std::to_string(label_suffix)] = (uint64_t)inst.operand.as_ptr();
+                addr_to_label[(uint64_t)inst.operand.as_ptr()] = "label_" + std::to_string(label_suffix);
                 label_suffix++;
             }
         }
     }
 
     void disassemble() {
-        // std::unordered_map<void*, std::string> jmp_addr_label_names;
-
         size_t inst_count = 0;
         for (const Inst& inst: p.insts) {
             // print labels
 
-            if (jmp_addr_label_names.contains((void*)inst_count))
-                std::cout << std::endl << "           " << jmp_addr_label_names.at((void*)inst_count) << ":" << std::endl;
+            if (addr_to_label.contains(inst_count))
+                std::cout << std::endl << "           " << addr_to_label.at(inst_count) << ":" << std::endl;
 
             // print instruction addr
             std::cout << "0x" << std::hex << std::setw(8) << std::setfill('0') << inst_count;
@@ -103,7 +125,7 @@ private:
             // print instruction operand
             if (inst_requires_operand(inst.type)) {
                 if (inst_operand_might_be_label(inst.type)) {
-                    std::cout << " " << jmp_addr_label_names.at(inst.operand.as_ptr());
+                    std::cout << " " << addr_to_label.at((uint64_t)inst.operand.as_ptr());
                 } else if (inst_operand_might_be_function(inst.type)) {
                     std::cout << " " << Vm::native_funcs_names[inst.operand.as_int()];
                 } else {
@@ -149,10 +171,10 @@ private:
             }
         } else {
             // check if label exists
-            if (!labels.contains(cmd.args[0].value)) {
+            if (!label_to_addr.contains(cmd.args[0].value)) {
                 std::cout << "Failed to set break point. Label `" << cmd.args[0].value << "` does not  exist!" << std::endl;
             } else {
-                breakpoints.insert(labels[cmd.args[0].value]);
+                breakpoints.insert(label_to_addr[cmd.args[0].value]);
             }
         }
     }
@@ -161,7 +183,8 @@ private:
     Program &p;
 
     std::unordered_set<uint64_t> breakpoints;
-    std::unordered_map<std::string, uint64_t> labels;
+    std::unordered_map<std::string, uint64_t> label_to_addr;
+    std::unordered_map<uint64_t, std::string> addr_to_label;
 };
 
 void program_usage(const char* program_name) {
