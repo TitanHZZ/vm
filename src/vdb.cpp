@@ -67,8 +67,10 @@ public:
                     break;
                 }
 
-                if (vm.next() == EXCEPTION_EXIT)
+                if (vm.next() == EXCEPTION_EXIT) {
                     std::cout << "Program finished." << std::endl;
+                    program_finished = true;
+                }
                 break;
 
             case Vdb_Command_Type::BREAK:
@@ -76,6 +78,16 @@ public:
                 break;
 
             case Vdb_Command_Type::INFO:
+                std::cout << "Available commands:" << std::endl;
+                std::cout << "    run                   -> run the program until a breakpoint or the end" << std::endl;
+                std::cout << "    ni                    -> run just the next instruction" << std::endl;
+                std::cout << "    disas / disassemble   -> disassemble the byte code" << std::endl;
+                std::cout << "    break (label | 0)     -> set breakpoint at label or addr 0" << std::endl;
+                std::cout << "    info (break | ...)    -> get information about come command" << std::endl;
+                std::cout << "    delete 0              -> delete breakpoint previously set at addr 0" << std::endl;
+                std::cout << "    x 0 10                -> inspect (print) the memory from addr 0 to 10" << std::endl;
+                break;
+
             case Vdb_Command_Type::DELETE:
             case Vdb_Command_Type::X:
                 std::cout << "Got command!" << std::endl;

@@ -129,6 +129,9 @@ Vdb_Command Vdb_Cmd_Parser::parse_command(const std::vector<Vdb_Token> &tokens) 
         return Vdb_Command { Vdb_Command_Type::NI, std::vector<Vdb_Token>() };
 
     case Vdb_Command_Type::INFO:
+        // handle info command
+        return Vdb_Command { Vdb_Command_Type::INFO, std::vector<Vdb_Token>() };
+
     case Vdb_Command_Type::DELETE:
     case Vdb_Command_Type::X:
     case Vdb_Command_Type::NOTHING:
