@@ -11,6 +11,7 @@ Vdb_Command_Type Vdb_Cmd_Parser::str_as_vdb_cmd(const std::string &str) {
     else if (str == "disas")    return Vdb_Command_Type::DISAS;
     else if (str == "break")    return Vdb_Command_Type::BREAK;
     else if (str == "info")     return Vdb_Command_Type::INFO;
+    else if (str == "help")     return Vdb_Command_Type::HELP;
     else if (str == "delete")   return Vdb_Command_Type::DELETE;
     else if (str == "x")        return Vdb_Command_Type::X;
     else return Vdb_Command_Type::UNKNOWN;
@@ -128,10 +129,11 @@ Vdb_Command Vdb_Cmd_Parser::parse_command(const std::vector<Vdb_Token> &tokens) 
         // handle next instruction command
         return Vdb_Command { Vdb_Command_Type::NI, std::vector<Vdb_Token>() };
 
-    case Vdb_Command_Type::INFO:
+    case Vdb_Command_Type::HELP:
         // handle info command
-        return Vdb_Command { Vdb_Command_Type::INFO, std::vector<Vdb_Token>() };
+        return Vdb_Command { Vdb_Command_Type::HELP, std::vector<Vdb_Token>() };
 
+    case Vdb_Command_Type::INFO:
     case Vdb_Command_Type::DELETE:
     case Vdb_Command_Type::X:
     case Vdb_Command_Type::NOTHING:

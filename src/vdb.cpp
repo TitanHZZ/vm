@@ -77,7 +77,7 @@ public:
                 set_breakpoint(cmd);
                 break;
 
-            case Vdb_Command_Type::INFO:
+            case Vdb_Command_Type::HELP:
                 std::cout << "Available commands:" << std::endl;
                 std::cout << "    run                   -> run the program until a breakpoint or the end" << std::endl;
                 std::cout << "    ni                    -> run just the next instruction" << std::endl;
@@ -88,6 +88,7 @@ public:
                 std::cout << "    x 0 10                -> inspect (print) the memory from addr 0 to 10" << std::endl;
                 break;
 
+            case Vdb_Command_Type::INFO:
             case Vdb_Command_Type::DELETE:
             case Vdb_Command_Type::X:
                 std::cout << "Got command!" << std::endl;

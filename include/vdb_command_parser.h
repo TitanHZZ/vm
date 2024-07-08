@@ -39,6 +39,7 @@ enum class Vdb_Command_Type {
     DISAS,
     BREAK,
     INFO,
+    HELP,
     DELETE,
     X,
 
