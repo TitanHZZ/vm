@@ -169,26 +169,36 @@ private:
     }
 
     void set_breakpoint(Vdb_Command &cmd) {
+        uint64_t addr;
+
         if (cmd.args[0].type == Vdb_Token_Type::NUMBER) {
-            // parse the number
-            size_t addr;
-            std::istringstream iss(cmd.args[0].value);
-            iss >> std::hex >> addr;
+            if (cmd.args[0].value.find('x') == std::string::npos) {
+                addr = static_cast<uint64_t>(std::strtoll(cmd.args[0].value.c_str(), nullptr, 10));
+            } else {
+                // parse the number
+                std::istringstream iss(cmd.args[0].value);
+                iss >> std::hex >> addr;
+            }
 
             // set breakpoint
-            if (addr < p.insts.size()) {
-                breakpoints.insert(addr);
-            } else {
+            if (addr >= p.insts.size()) {
                 std::cout << "Failed to set break point. Address is bigger than the number of instructions!" << std::endl;
+                return;
             }
         } else {
             // check if label exists
             if (!label_to_addr.contains(cmd.args[0].value)) {
                 std::cout << "Failed to set break point. Label `" << cmd.args[0].value << "` does not  exist!" << std::endl;
+                return;
             } else {
-                breakpoints.insert(label_to_addr[cmd.args[0].value]);
+                addr = label_to_addr[cmd.args[0].value];
             }
         }
+
+        if (breakpoints.contains(addr))
+            std::cout << "Failed to set break point. Break point at addr `" << addr << "` already set." << std::endl;
+        else
+            breakpoints.insert(addr);
     }
 
     Vm &vm;
