@@ -136,7 +136,16 @@ Vdb_Command Vdb_Cmd_Parser::parse_command(const std::vector<Vdb_Token> &tokens) 
         return Vdb_Command { Vdb_Command_Type::INFO, std::vector<Vdb_Token>(1, std::move(tokens[pos])) };
     }
 
-    case Vdb_Command_Type::DELETE:
+    case Vdb_Command_Type::DELETE: {
+        // handle delete command
+        const Vdb_Token &arg = next(tokens, cmd_type_acc_tk_type[static_cast<int>(Vdb_Command_Type::DELETE)]);
+        if (arg.type == Vdb_Token_Type::UNKNOWN) {
+            return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<Vdb_Token>() };
+        }
+
+        return Vdb_Command { Vdb_Command_Type::DELETE, std::vector<Vdb_Token>(1, std::move(tokens[pos])) };
+    }
+
     case Vdb_Command_Type::X:
     case Vdb_Command_Type::NOTHING:
     case Vdb_Command_Type::UNKNOWN:

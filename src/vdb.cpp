@@ -81,7 +81,7 @@ public:
                 std::cout << "Available commands:" << std::endl;
                 std::cout << "    run                   -> run the program until a breakpoint or the end" << std::endl;
                 std::cout << "    ni                    -> run just the next instruction" << std::endl;
-                std::cout << "    disas / disassemble   -> disassemble the byte code" << std::endl;
+                std::cout << "    disas                 -> disassemble the byte code" << std::endl;
                 std::cout << "    break (label | 0)     -> set breakpoint at label or addr 0" << std::endl;
                 std::cout << "    info (break | ...)    -> get information about some command" << std::endl;
                 std::cout << "    delete 0              -> delete breakpoint previously set at addr 0" << std::endl;
@@ -118,7 +118,29 @@ public:
                 }
                 break;
 
-            case Vdb_Command_Type::DELETE:
+            case Vdb_Command_Type::DELETE: {
+                uint64_t addr;
+                // if (cmd.args[0].value.find('x') == std::string::npos) {
+                //     // parse the number as decimal
+                //     addr = static_cast<uint64_t>(std::strtoll(cmd.args[0].value.c_str(), nullptr, 10));
+                // } else {
+                //     // parse the number as hex
+                //     std::istringstream iss(cmd.args[0].value);
+                //     iss >> std::hex >> addr;
+                // }
+
+                std::istringstream iss(cmd.args[0].value);
+                iss >> (cmd.args[0].value.find('x') == std::string::npos ? std::dec : std::hex) >> addr;
+
+                if (!breakpoints.contains(addr)) {
+                    std::cout << "No such breakpoint with addr `" << addr << "`." << std::endl;
+                    break;
+                }
+
+                breakpoints.erase(addr);
+            }
+            break;
+
             case Vdb_Command_Type::X:
                 std::cout << "Got command!" << std::endl;
                 break;
