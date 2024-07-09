@@ -83,12 +83,41 @@ public:
                 std::cout << "    ni                    -> run just the next instruction" << std::endl;
                 std::cout << "    disas / disassemble   -> disassemble the byte code" << std::endl;
                 std::cout << "    break (label | 0)     -> set breakpoint at label or addr 0" << std::endl;
-                std::cout << "    info (break | ...)    -> get information about come command" << std::endl;
+                std::cout << "    info (break | ...)    -> get information about some command" << std::endl;
                 std::cout << "    delete 0              -> delete breakpoint previously set at addr 0" << std::endl;
                 std::cout << "    x 0 10                -> inspect (print) the memory from addr 0 to 10" << std::endl;
                 break;
 
             case Vdb_Command_Type::INFO:
+                switch (Vdb_Cmd_Parser::str_as_vdb_cmd(cmd.args[0].value)) {
+                case Vdb_Command_Type::BREAK:
+                    // print breakpoints
+                    if (breakpoints.size() == 0) {
+                        std::cout << "No breakpoints set." << std::endl;
+                        break;
+                    }
+
+                    std::cout << "Breakpoints: ";
+                    for (const auto& elem: breakpoints)
+                        std::cout << elem << " ";
+                    std::cout << std::endl;
+                    break;
+
+                case Vdb_Command_Type::DELETE:
+                case Vdb_Command_Type::DISAS:
+                case Vdb_Command_Type::HELP:
+                case Vdb_Command_Type::INFO:
+                case Vdb_Command_Type::NI:
+                case Vdb_Command_Type::NOTHING:
+                case Vdb_Command_Type::RUN:
+                case Vdb_Command_Type::X:
+                case Vdb_Command_Type::UNKNOWN:
+                default:
+                    std::cout << "`" << cmd.args[0].value << "` is not a valid subcommand for `info`." << std::endl;
+                    break;
+                }
+                break;
+
             case Vdb_Command_Type::DELETE:
             case Vdb_Command_Type::X:
                 std::cout << "Got command!" << std::endl;
@@ -109,7 +138,6 @@ private:
         size_t label_suffix = 0;
         for (const Inst& inst: p.insts) {
             if (inst_operand_might_be_label(inst.type)) {
-                // jmp_addr_label_names.emplace(inst.operand.as_ptr(), "label_" + std::to_string(label_suffix));
                 label_to_addr["label_" + std::to_string(label_suffix)] = (uint64_t)inst.operand.as_ptr();
                 addr_to_label[(uint64_t)inst.operand.as_ptr()] = "label_" + std::to_string(label_suffix);
                 label_suffix++;

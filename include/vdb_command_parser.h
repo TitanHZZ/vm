@@ -24,6 +24,7 @@ constexpr static Vdb_Token_Type cmd_type_acc_tk_type[][2] = {
     {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // DISAS
     {Vdb_Token_Type::NUMBER,  Vdb_Token_Type::KEYWORD}, // BREAK
     {Vdb_Token_Type::COMMAND, Vdb_Token_Type::UNKNOWN}, // INFO
+    {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // HELP
     {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // DELETE
     {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // X
     {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // NOTHING
@@ -62,9 +63,11 @@ public:
     // parser funcs
     Vdb_Command get_vdb_command(const std::string &str);
 
+    // aux funcs
+    static Vdb_Command_Type str_as_vdb_cmd(const std::string &str);
+
 private:
     // aux funcs
-    Vdb_Command_Type str_as_vdb_cmd(const std::string &str);
     const char *tk_type_as_str(Vdb_Token_Type type);
 
     // lexer funcs
