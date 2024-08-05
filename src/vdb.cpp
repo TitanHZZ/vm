@@ -120,15 +120,6 @@ public:
 
             case Vdb_Command_Type::DELETE: {
                 uint64_t addr;
-                // if (cmd.args[0].value.find('x') == std::string::npos) {
-                //     // parse the number as decimal
-                //     addr = static_cast<uint64_t>(std::strtoll(cmd.args[0].value.c_str(), nullptr, 10));
-                // } else {
-                //     // parse the number as hex
-                //     std::istringstream iss(cmd.args[0].value);
-                //     iss >> std::hex >> addr;
-                // }
-
                 std::istringstream iss(cmd.args[0].value);
                 iss >> (cmd.args[0].value.find('x') == std::string::npos ? std::dec : std::hex) >> addr;
 
@@ -141,9 +132,47 @@ public:
             }
             break;
 
-            case Vdb_Command_Type::X:
-                std::cout << "Got command!" << std::endl;
-                break;
+            case Vdb_Command_Type::X: {
+                uint64_t base_addr, top_addr;
+
+                std::istringstream iss0(cmd.args[0].value);
+                iss0 >> (cmd.args[0].value.find('x') == std::string::npos ? std::dec : std::hex) >> base_addr;
+
+                std::istringstream iss1(cmd.args[1].value);
+                iss1 >> (cmd.args[1].value.find('x') == std::string::npos ? std::dec : std::hex) >> top_addr;
+
+                if (base_addr > top_addr) {
+                    std::cout << "Base addr cannot be bigger than the top addr." << std::endl;
+                    break;
+                }
+
+                if (base_addr >= p.memory.size() || top_addr >= p.memory.size()) {
+                    std::cout << "Addrs are out of range. Current memory size: " << p.memory.size() << std::endl;
+                    break;
+                }
+
+                for (uint64_t i = base_addr; i <= top_addr; i++) {
+                    switch (p.memory[i].get_type()) {
+                    case Nan_Type::DOUBLE:
+                        std::cout << "    # Double: " << p.memory[i].as_double() << std::endl;
+                        break;
+
+                    case Nan_Type::INT:
+                        std::cout << "    # Int: " << p.memory[i].as_int() << std::endl;
+                        break;
+
+                    case Nan_Type::PTR:
+                        std::cout << "    # Ptr: " << p.memory[i].as_ptr() << std::endl;
+                        break;
+
+                    case Nan_Type::EXCEPTION:
+                    default:
+                        std::cerr << "ERROR: Unknown variable data type in the memory." << std::endl;
+                        exit(1);
+                    }
+                }
+            }
+            break;
 
             case Vdb_Command_Type::NOTHING:
             case Vdb_Command_Type::UNKNOWN:
@@ -223,13 +252,8 @@ private:
         uint64_t addr;
 
         if (cmd.args[0].type == Vdb_Token_Type::NUMBER) {
-            if (cmd.args[0].value.find('x') == std::string::npos) {
-                addr = static_cast<uint64_t>(std::strtoll(cmd.args[0].value.c_str(), nullptr, 10));
-            } else {
-                // parse the number
-                std::istringstream iss(cmd.args[0].value);
-                iss >> std::hex >> addr;
-            }
+            std::istringstream iss(cmd.args[0].value);
+            iss >> (cmd.args[0].value.find('x') == std::string::npos ? std::dec : std::hex) >> addr;
 
             // set breakpoint
             if (addr >= p.insts.size()) {

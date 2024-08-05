@@ -26,7 +26,7 @@ constexpr static Vdb_Token_Type cmd_type_acc_tk_type[][2] = {
     {Vdb_Token_Type::COMMAND, Vdb_Token_Type::UNKNOWN}, // INFO
     {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // HELP
     {Vdb_Token_Type::NUMBER,  Vdb_Token_Type::UNKNOWN}, // DELETE
-    {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // X
+    {Vdb_Token_Type::NUMBER,  Vdb_Token_Type::NUMBER }, // X
     {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}, // NOTHING
     {Vdb_Token_Type::UNKNOWN, Vdb_Token_Type::UNKNOWN}  // UNKNOWN
 };

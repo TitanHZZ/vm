@@ -111,7 +111,7 @@ Vdb_Command Vdb_Cmd_Parser::parse_command(const std::vector<Vdb_Token> &tokens) 
             return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<Vdb_Token>() };
         }
 
-        return Vdb_Command { Vdb_Command_Type::BREAK, std::vector<Vdb_Token>(1, std::move(tokens[pos])) };
+        return Vdb_Command { Vdb_Command_Type::BREAK, std::vector<Vdb_Token>{std::move(tokens[pos])} };
     }
 
     case Vdb_Command_Type::DISAS:
@@ -133,7 +133,7 @@ Vdb_Command Vdb_Cmd_Parser::parse_command(const std::vector<Vdb_Token> &tokens) 
             return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<Vdb_Token>() };
         }
 
-        return Vdb_Command { Vdb_Command_Type::INFO, std::vector<Vdb_Token>(1, std::move(tokens[pos])) };
+        return Vdb_Command { Vdb_Command_Type::INFO, std::vector<Vdb_Token>{std::move(tokens[pos])} };
     }
 
     case Vdb_Command_Type::DELETE: {
@@ -143,10 +143,20 @@ Vdb_Command Vdb_Cmd_Parser::parse_command(const std::vector<Vdb_Token> &tokens) 
             return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<Vdb_Token>() };
         }
 
-        return Vdb_Command { Vdb_Command_Type::DELETE, std::vector<Vdb_Token>(1, std::move(tokens[pos])) };
+        return Vdb_Command { Vdb_Command_Type::DELETE, std::vector<Vdb_Token>{std::move(tokens[pos])} };
     }
 
-    case Vdb_Command_Type::X:
+    case Vdb_Command_Type::X: {
+        // handle x command
+        const Vdb_Token &arg1 = next(tokens, cmd_type_acc_tk_type[static_cast<int>(Vdb_Command_Type::X)]);
+        const Vdb_Token &arg2 = next(tokens, cmd_type_acc_tk_type[static_cast<int>(Vdb_Command_Type::X)]);
+        if (arg1.type == Vdb_Token_Type::UNKNOWN || arg2.type == Vdb_Token_Type::UNKNOWN) {
+            return Vdb_Command { Vdb_Command_Type::NOTHING, std::vector<Vdb_Token>() };
+        }
+
+        return Vdb_Command { Vdb_Command_Type::X, std::vector<Vdb_Token>{std::move(arg1), std::move(arg2)} };
+    }
+
     case Vdb_Command_Type::NOTHING:
     case Vdb_Command_Type::UNKNOWN:
     default:
