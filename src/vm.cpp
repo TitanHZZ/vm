@@ -3,10 +3,7 @@
 
 #include "vm.h"
 
-Vm::Vm() {}
-Vm::~Vm(){}
-
-void Vm::execute_program(Program& program) {
+void Vm::execute_program(const bool debug_mode) {
     // check for empty program
     if (program.insts.size() == 0) {
         std::cout << "WARNING: Ignoring empty program!" << std::endl;
@@ -17,10 +14,9 @@ void Vm::execute_program(Program& program) {
     ip = 0;
     sp = 0;
     current_program_size = program.insts.size();
-    memory = &program.memory;
 
-    for (size_t i = 0; i < EXECUTION_LIMIT && ip < current_program_size; i++) {
-        const Exception_Type exception = this->execute_instruction(program.insts.at(ip));
+    for (size_t i = 0; i < EXECUTION_LIMIT && ip < current_program_size && !debug_mode; i++) {
+        const Exception_Type exception = execute_instruction(program.insts.at(ip));
 
         if (exception == Exception_Type::EXCEPTION_EXIT)
             break;
@@ -32,11 +28,9 @@ void Vm::execute_program(Program& program) {
     }
 }
 
-/*void Vm::execute_program(const char *path) {
-    Program program;
-    program.parse_from_file(path);
-    this->execute_program(program);
-}*/
+Exception_Type Vm::next() {
+    return ip < current_program_size ? execute_instruction(program.insts.at(ip)) : Exception_Type::EXCEPTION_EXIT;
+}
 
 Exception_Type Vm::execute_instruction(Inst& inst) {
     // check for stack overflow
@@ -158,11 +152,11 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
         break;
 
     case Inst_Type::INST_DUMP_STACK:
-        this->dump_stack();
+        dump_stack();
         break;
 
     case Inst_Type::INST_DUMP_MEMORY:
-        this->dump_memory();
+        dump_memory();
         break;
 
     case Inst_Type::INST_SWAP:
@@ -430,16 +424,16 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
             return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
 
         // check 'ptr' value
-        if ((uint64_t)stack[sp-1].as_ptr() >= memory->size())
+        if ((uint64_t)stack[sp-1].as_ptr() >= program.memory.size())
             return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
 
         // get a byte from a double in the static memory (not sure if this will ever be used)
-        if ((*memory)[static_cast<size_t>(stack[sp-1].as_int())].get_type() == Nan_Type::DOUBLE) {
-            double value = (*memory)[static_cast<size_t>(stack[sp-1].as_int())].as_double();
+        if (program.memory[static_cast<size_t>(stack[sp-1].as_int())].get_type() == Nan_Type::DOUBLE) {
+            double value = program.memory[static_cast<size_t>(stack[sp-1].as_int())].as_double();
             const uint64_t *const new_value = (uint64_t*)(&value);
             stack[sp-1] = CAST_TO_SIZE(read_size, *new_value);
         } else {
-            stack[sp-1] = CAST_TO_SIZE(read_size, (*memory)[static_cast<size_t>(stack[sp-1].as_int())].as_int());
+            stack[sp-1] = CAST_TO_SIZE(read_size, program.memory[static_cast<size_t>(stack[sp-1].as_int())].as_int());
         }
         break;
     }
@@ -462,16 +456,16 @@ Exception_Type Vm::execute_instruction(Inst& inst) {
             return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
 
         // check ptr value
-        if ((uint64_t)stack[sp-2].as_ptr() >= memory->size())
+        if ((uint64_t)stack[sp-2].as_ptr() >= program.memory.size())
             return Exception_Type::EXCEPTION_INVALID_MEM_ADDR;
 
         // get a byte from a double in the stack (not shure if this will ever be used)
         if (stack[sp-1].get_type() == Nan_Type::DOUBLE) {
             const double value = stack[sp-1].as_double();
             const uint64_t *const new_value = (uint64_t*)(&value);
-            (*memory)[static_cast<size_t>(stack[sp-2].as_int())] = CAST_TO_SIZE(write_size, *new_value);
+            program.memory[static_cast<size_t>(stack[sp-2].as_int())] = CAST_TO_SIZE(write_size, *new_value);
         } else {
-            (*memory)[static_cast<size_t>(stack[sp-2].as_int())] = CAST_TO_SIZE(write_size, stack[sp-1].as_int());
+            program.memory[static_cast<size_t>(stack[sp-2].as_int())] = CAST_TO_SIZE(write_size, stack[sp-1].as_int());
         }
         sp -= 2;
         break;
@@ -522,19 +516,19 @@ void Vm::dump_stack() {
 
 void Vm::dump_memory() {
     // print the memory
-    std::cout << "Vm Memory (" << memory->size() << " element" << (memory->size() != 1 ? "s" : "") << "):" << std::endl;
-    for (size_t i = 0; i < memory->size(); i++) {
-        switch ((*memory)[i].get_type()) {
+    std::cout << "Vm Memory (" << program.memory.size() << " element" << (program.memory.size() != 1 ? "s" : "") << "):" << std::endl;
+    for (size_t i = 0; i < program.memory.size(); i++) {
+        switch (program.memory[i].get_type()) {
         case Nan_Type::DOUBLE:
-            std::cout << "    # Double: " << (*memory)[i].as_double() << std::endl;
+            std::cout << "    # Double: " << program.memory[i].as_double() << std::endl;
             break;
 
         case Nan_Type::INT:
-            std::cout << "    # Int: " << (*memory)[i].as_int() << std::endl;
+            std::cout << "    # Int: " << program.memory[i].as_int() << std::endl;
             break;
 
         case Nan_Type::PTR:
-            std::cout << "    # Ptr: " << (*memory)[i].as_ptr() << std::endl;
+            std::cout << "    # Ptr: " << program.memory[i].as_ptr() << std::endl;
             break;
 
         case Nan_Type::EXCEPTION:
@@ -544,7 +538,7 @@ void Vm::dump_memory() {
         }
     }
 
-    if (memory->size() == 0)
+    if (program.memory.size() == 0)
         std::cout << "    [Empty]" << std::endl;
 }
 
@@ -581,7 +575,7 @@ void Vm::native_fwrite() {
     std::vector<char> buf;
     buf.reserve(str_size);
     for (size_t i = 0; i < str_size; i++) {
-        buf.push_back(static_cast<char>((*memory)[static_cast<size_t>(stack[sp-1].as_int())+i].as_int()));
+        buf.push_back(static_cast<char>(program.memory[static_cast<size_t>(stack[sp-1].as_int())+i].as_int()));
     }
 
     // get the file 'pointer'

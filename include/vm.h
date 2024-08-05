@@ -20,6 +20,10 @@
 
 class Vm {
 private:
+    Exception_Type execute_instruction(Inst& inst);
+
+    Program &program;
+
     // stack
     // TODO: replace the stack with a vector
     Nan_Box stack[STACK_CAP];
@@ -28,9 +32,6 @@ private:
     // program
     uint64_t ip;
     size_t current_program_size;
-
-    // static memory
-    std::vector<Nan_Box> *memory;
 
     // native functions
     typedef void (Vm::*Native_Func)();
@@ -45,16 +46,12 @@ private:
     };
 
 public:
-    Vm();
-    ~Vm();
+    Vm(Program &program) : program(program) {};
+    ~Vm() {};
 
-    // void execute_program(Inst program[], const size_t program_size);
-    // void execute_program(const char *path);
-    void execute_program(Program& program); /*{
-        this->execute_program(program.insts.data(), program.insts.size());
-    }*/
-
-    Exception_Type execute_instruction(Inst& inst);
+    void execute_program(bool debug_mode = false);
+    Exception_Type next();
+    inline uint64_t get_ip() { return ip; }
 
     // debug functions
     void dump_stack();
